@@ -1,9 +1,10 @@
-# $Id: RankCorrelation.pm,v 1.13 2003/12/17 04:11:46 gene Exp $
+# $Id: RankCorrelation.pm,v 1.16 2003/12/31 18:52:18 gene Exp $
 
 package Statistics::RankCorrelation;
 use vars qw($VERSION);
-$VERSION = '0.06';
+$VERSION = '0.07';
 use strict;
+#use warnings;
 use Carp;
 
 sub new {  # {{{
@@ -23,30 +24,37 @@ sub _init {  # {{{
 
     # Bail if either vector is empty. 
     croak "Both vectors must be defined with numerical elements\n"
-        unless ($self->{x_data} && $self->{y_data}) &&
-               (@{$self->{x_data}} && @{$self->{y_data}});
+        unless ( $self->x_data && $self->y_data ) &&
+               ( @{ $self->x_data } && @{ $self->y_data });
 
     # "co-normalize" the vectors.
-    ($self->{x_data}, $self->{y_data}) = _pad_vectors(
-        $self->{x_data}, $self->{y_data}
+    ( $self->{x_data}, $self->{y_data} ) = pad_vectors(
+        $self->x_data, $self->y_data
     );
 
-    # Get the size of the data vector.
-    $self->{size} = @{ $self->{x_data} };
+    # Sort the vectors as measurement pairs by the x set.
+    ( $self->{x_data}, $self->{y_data} ) = pair_sort(
+        $self->x_data, $self->y_data
+    );
 
-    # Rank the vectors.
-    $self->x_rank(_rank($self->{x_data}));
-    $self->y_rank(_rank($self->{y_data}));
+    # Set the ranks of the vectors.
+    $self->x_rank( rank( $self->x_data ) );
+    $self->y_rank( rank( $self->y_data ) );
+
+    # Set the size of the unit data vector.
+    $self->{size} = @{ $self->x_data };
 }  # }}}
 
 # Accessors {{{
 sub x_data {
     my $self = shift;
+    $self->{x_data} = shift if @_;
     return $self->{x_data};
 }
 
 sub y_data {
     my $self = shift;
+    $self->{y_data} = shift if @_;
     return $self->{y_data};
 }
 
@@ -70,9 +78,9 @@ sub spearman {  # {{{
     my $sq_sum = 0;
 
     # Compute the squared rank difference sum.
-    for (0 .. $self->{size} - 1) {
-        $sq_sum += ($self->{x_rank}[$_] - $self->{y_rank}[$_]) ** 2;
-#warn "$sq_sum\n += ($self->{x_rank}[$_] - $self->{y_rank}[$_]) ** 2";
+    for( 0 .. $self->{size} - 1 ) {
+        $sq_sum += ( $self->{x_rank}[$_] - $self->{y_rank}[$_] ) ** 2;
+#warn "$sq_sum\n += ( $self->{x_rank}[$_] - $self->{y_rank}[$_] ) ** 2";
     }
 
 #warn "1 - ( (6 * $sq_sum) / ( $self->{size} * (( $self->{size} ** 2 ) - 1))\n";
@@ -81,15 +89,27 @@ sub spearman {  # {{{
     );
 }  # }}}
 
-# Return vector ranks, with averaged ties.
-sub _rank {  # {{{
+# Sort the given vectors as measurement pairs by the x data.
+sub pair_sort {  # {{{
+    my ( $x, $y ) = @_;
+
+    my @pairs =
+        sort { $a->[0] <=> $b->[0] }
+            map { [ $x->[$_], $y->[$_] ] }
+                0 .. @$x - 1;
+
+    return [ map { $_->[0] } @pairs ], [ map { $_->[1] } @pairs ];
+}  # }}}
+
+# Return ranks, with averaged ties of a pre-sorted vector.
+sub rank {  # {{{
     my $u = shift;
 
-    # Rank the sorted vector with an HoL.
+    # Make a list of ranks for each datum.
     my %rank;
-    push @{ $rank{$u->[$_]} }, $_ + 1 for 0 .. @$u - 1;
+    push @{ $rank{ $u->[$_] } }, $_ + 1 for 0 .. @$u - 1;
 
-    # Set the ranks and average any tied data.
+    # Set the averaged ranks. 
     my @ranks;
     for my $x (sort { $a <=> $b } keys %rank) {
         # Get the number of ties.
@@ -116,9 +136,9 @@ sub csim {  # {{{
     my $self = shift;
 
     # Get the pitch matrices for each vector.
-    my $m1 = _correlation_matrix($self->{x_data});
+    my $m1 = correlation_matrix($self->{x_data});
 #warn map { "@$_\n" } @$m1;
-    my $m2 = _correlation_matrix($self->{y_data});
+    my $m2 = correlation_matrix($self->{y_data});
 #warn map { "@$_\n" } @$m2;
 
     # Compute the rank correlation.
@@ -136,7 +156,7 @@ sub csim {  # {{{
 
 # Append zeros to either vector for all values in the other that do
 # not have a corresponding value.
-sub _pad_vectors {  # {{{
+sub pad_vectors {  # {{{
     my ($u, $v) = @_;
 
     if (@$u > @$v) {
@@ -151,7 +171,7 @@ sub _pad_vectors {  # {{{
 
 # Build a square, binary matrix that represents "higher or lower"
 # value within the given vector.
-sub _correlation_matrix {  # {{{
+sub correlation_matrix {  # {{{
     my $u = shift;
     my $c;
 
@@ -177,10 +197,13 @@ Statistics::RankCorrelation - Compute the rank correlation between two vectors
 
   use Statistics::RankCorrelation;
 
-  $c = Statistics::RankCorrelation->new( \@u, \@v );
+  $x = [ 8, 7, 6, 5, 4, 3, 2, 1 ];
+  $y = [ 2, 1, 5, 3, 4, 7, 8, 6 ];
+
+  $c = Statistics::RankCorrelation->new( $x, $y );
 
   $n = $c->spearman;
-  $n = $c->csim;
+  $m = $c->csim;
 
 =head1 DESCRIPTION
 
@@ -189,6 +212,9 @@ sample vectors.
 
 Working examples may be found in the distribution C<eg> directory and 
 the module test file.
+
+Also the C<HANDY FUNCTIONS> section below has some ..handy functions 
+to use when computing sorted rank cooefficients by hand.
 
 =head1 PUBLIC METHODS
 
@@ -251,13 +277,18 @@ original vectors.
 
 This measure has been studied in musical contour analysis.
 
-=head1 PRIVATE FUNCTIONS
+=head1 HANDY FUNCTIONS
 
-=head2 _rank
+=head2 rank
 
-  $u_ranks = _rank( \@u );
+  $ranks = rank( [ 1.0, 2.1, 3.2, 3.2, 3.2, 4.3 ] );
+  # [1, 2, 4, 4, 4, 6]
 
 Return an array reference of the ordinal ranks of the given data.
+
+Note that the data must be sorted as measurement pairs prior to 
+computing the statistical rank.  This is done automatically by the
+object initialization method.
 
 In the case of a tie in the data (identical values) the rank numbers
 are averaged.  An example will elucidate:
@@ -268,17 +299,26 @@ are averaged.  An example will elucidate:
   tied average:   (3 + 4 + 5) / 3 == 4
   averaged ranks: [ 1,   2,   4,   4,   4,   6   ]
 
-=head2 _pad_vectors
+=head2 pair_sort
 
-  ( $u, $v ) = _pad_vectors( $u, $v );
+  ( $x, $y ) = pair_sort( [ 3, 5, 1, 1, 4 ], [ 9, 6, 3, 0, 9 ] );
+  # [1, 1, 3, 4, 5], [0, 3, 9, 9, 6]
+
+Sort two given vectors as measurement pairs in numerical ascending 
+order by the first (x) array.
+
+=head2 pad_vectors
+
+  ( $u, $v ) = pad_vectors( [ 1, 2, 3, 4 ], [ 9, 8 ] );
+  # [1, 2, 3, 4], [9, 8, 0, 0]
 
 Append zeros to either input vector for all values in the other that 
 do not have a corresponding value.  That is, "pad" the tail of the 
 shorter vector with zero values.
 
-=head2 _correlation_matrix
+=head2 correlation_matrix
 
-  $matrix = _correlation_matrix( $u );
+  $matrix = correlation_matrix( $u );
 
 Return the correlation matrix for a single vector.
 

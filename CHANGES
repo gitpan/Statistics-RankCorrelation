@@ -1,5 +1,12 @@
 Changes file for Statistics::RankCorrelation
 
+0.07  Wed Dec 30 2003
+    - Added the missing pair sorting function and now this module
+      works correctly.
+    - Changed the functions that were documented as "private" to
+      "handy".
+    - Improved the documentation with concrete examples.
+
 0.06  Mon Dec 15 2003
     * No functionality changes in the module itself.
     - Cleaned-up, repaired and smoothed out the documentation.
