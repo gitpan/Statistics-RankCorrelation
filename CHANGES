@@ -15,3 +15,7 @@ Changes file for Statistics::RankCorrelation
     - Compute the x and y ranks in _init().
     - Enhanced POD.
     - Made a proper 1.t script.
+
+0.04 Wed Aug  6 2003
+    - Fixed and enhanced POD.
+    - Removed the assignment from the *_data accessors.

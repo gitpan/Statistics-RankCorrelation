@@ -1,5 +1,4 @@
 use ExtUtils::MakeMaker;
-
 WriteMakefile(
     NAME         => 'Statistics::RankCorrelation',
     VERSION_FROM => 'lib/Statistics/RankCorrelation.pm',

@@ -1,7 +1,7 @@
-# $Id: RankCorrelation.pm,v 1.5 2003/08/06 15:18:56 gene Exp $
+# $Id: RankCorrelation.pm,v 1.6 2003/08/06 17:00:36 gene Exp $
 
 package Statistics::RankCorrelation;
-use vars qw($VERSION); $VERSION = '0.03';
+use vars qw($VERSION); $VERSION = '0.04';
 use strict;
 use Carp;
 
@@ -41,13 +41,11 @@ sub _init {  # {{{
 # Accessors {{{
 sub x_data {
     my $self = shift;
-    $self->{x_data} = shift if @_;
     return $self->{x_data};
 }
 
 sub y_data {
     my $self = shift;
-    $self->{y_data} = shift if @_;
     return $self->{y_data};
 }
 
@@ -63,9 +61,7 @@ sub y_rank {
     return $self->{y_rank};
 }  # }}}
 
-#     6 * sum((R_i - S_i)^2)
-# 1 - ----------------------
-#         N * (N^2 - 1)
+# Retrn Spearman's rho correlation coefficient.
 sub spearman {  # {{{
     my $self = shift;
 
@@ -85,7 +81,6 @@ sub spearman {  # {{{
 }  # }}}
 
 # Return vector ranks, with averaged ties.
-# http://software.biostat.washington.edu/~rossini/courses/intro-nonpar/text/Tied_Data.html#SECTION00427000000000000000
 sub _rank {  # {{{
     my $u = shift;
 
@@ -116,8 +111,7 @@ sub _rank {  # {{{
     return \@ranks;
 }  # }}}
 
-# Get the "contour similarity index measure" number - a single 
-# dimensional measure of higher or lower value between two vectors.
+# Return the "contour similarity index measure".
 sub csim {  # {{{
     my $self = shift;
 
@@ -193,22 +187,52 @@ Statistics::RankCorrelation - Compute the rank correlation between two vectors
 This module computes the rank correlation coefficient between two 
 sample vectors.
 
-As an example, this metric is employed in the study of musical 
-contour similarity and "sample agreement".
+Some definitions are always in order:
 
-Okay.  Some definitions are always in order:
+Statistical rank:  The ordinal number of a value's position in a list 
+sorted in a specified order (usually decreasing).
 
-Statistical rank: The ordinal number of a value in a list arranged in 
-a specified order (usually decreasing).
+Tied ranks:
 
 =head1 PUBLIC METHODS
+
+=head2 new VECTOR1, VECTOR2
+
+  $c = Statistics::RankCorrelation->new(\@u, \@v);
+
+This method constructs a new C<Statistics::RankCorrelation> object,
+"co-normalizes" (i.e. pad with trailing zero values) the vectors if 
+they are not the same size, and finds their statistical ranks.
+
+=head2 x_data, y_data
+
+  $x = $c->x_data;
+  $y = $c->y_data;
+
+Return the original data samples that were provided to the constructor 
+as array references.
+
+=head2 x_rank, y_rank
+
+  $x = $c->x_rank;
+  $y = $c->y_rank;
+
+Return the statistically ranked data samples that were provided to 
+the constructor as array references.
 
 =head2 spearman
 
   $n = $c->spearman;
 
-Spearman rank-order correlation is a nonparametric measure of 
-association based on the rank of the data values.
+Spearman's rho rank-order correlation is a nonparametric measure of 
+association based on the rank of the data values.  The formula is:
+
+      6 * sum( (Ri - Si)^2 )
+  1 - ----------------------
+          N * (N^2 - 1)
+
+Where Ri and Si are the ranks of the values of the two data vectors,
+and N is the number of samples in the vectors.
 
 The Spearman correlation is a special case of the Pearson 
 product-moment correlation.
@@ -237,8 +261,8 @@ Return an array reference of the ordinal ranks of the given data.
 In the case of a tie in the data (identical values) the rank numbers
 are averaged.  An example will help:
 
-  data  = [1.0, 2.1, 3.2, 3.2, 3.2, 4.3]
-  ranks = [1, 2, 9.6/3, 9.6/3, 9.6/3, 4]
+  data  = [1.0, 2.1, 3.2,   3.2,   3.2,   4.3]
+  ranks = [1,   2,   9.6/3, 9.6/3, 9.6/3, 4]
 
 =head2 _pad_vectors
 
@@ -259,11 +283,11 @@ or lower" value within the vector itself.
 
 =head1 SEE ALSO
 
-For the C<csim> function:
+For the C<csim> method:
 
 C<http://www2.mdanderson.org/app/ilya/Publications/JNMRcontour.pdf>
 
-For the other functions:
+For the <Cspearman> method:
 
 C<http://mathworld.wolfram.com/SpearmanRankCorrelationCoefficient.html>
 
@@ -276,17 +300,6 @@ C<http://fonsg3.let.uva.nl/Service/Statistics/RankCorrelation_coefficient.html>
 C<http://www.statsoftinc.com/textbook/stnonpar.html#correlations>
 
 C<http://software.biostat.washington.edu/~rossini/courses/intro-nonpar/text/Tied_Data.html#SECTION00427000000000000000>
-
-=head1 TO DO
-
-Implement the tie averaging done in Spearman's R.
-
-Make a comprehensive test suite with a data file for all functions 
-to use.
-
-Implement other rank correlation measures.  Here is a nice survey:
-
-C<http://jeff-lab.queensu.ca/stat/sas/sasman/sashtml/proc/zompmeth.htm>
 
 =head1 AUTHOR
 
