@@ -1,98 +1,130 @@
-# $Id: RankCorrelation.pm,v 1.2 2003/08/04 15:32:20 gene Exp $
+# $Id: RankCorrelation.pm,v 1.5 2003/08/06 15:18:56 gene Exp $
 
 package Statistics::RankCorrelation;
+use vars qw($VERSION); $VERSION = '0.03';
 use strict;
-use vars qw($VERSION); $VERSION = '0.02';
 use Carp;
-use base qw(Exporter);
-use vars qw(@EXPORT);
-@EXPORT = qw(
-    csim 
-    spearman
-    correlation_coefficient
-);
 
-#     6 * sum((X_i - Y_i)^2)
+sub new {  # {{{
+    my $proto = shift;
+    my $class = ref ($proto) || $proto;
+    my $self = {
+        x_data => shift,
+        y_data => shift,
+    };
+    bless $self, $class;
+    $self->_init;
+    return $self;
+}  # }}}
+
+sub _init {  # {{{
+    my $self = shift;
+
+    # Bail if either vector is empty. 
+    croak "Both vectors must be defined with numerical elements\n"
+        unless ($self->{x_data} && $self->{y_data}) &&
+               (@{$self->{x_data}} && @{$self->{y_data}});
+
+    # "co-normalize" the vectors.
+    ($self->{x_data}, $self->{y_data}) = _pad_vectors(
+        $self->{x_data}, $self->{y_data}
+    );
+
+    # Get the size of the data vector.
+    $self->{size} = @{ $self->{x_data} };
+
+    # Rank the vectors.
+    $self->x_rank(_rank($self->{x_data}));
+    $self->y_rank(_rank($self->{y_data}));
+}  # }}}
+
+# Accessors {{{
+sub x_data {
+    my $self = shift;
+    $self->{x_data} = shift if @_;
+    return $self->{x_data};
+}
+
+sub y_data {
+    my $self = shift;
+    $self->{y_data} = shift if @_;
+    return $self->{y_data};
+}
+
+sub x_rank {
+    my $self = shift;
+    $self->{x_rank} = shift if @_;
+    return $self->{x_rank};
+}
+
+sub y_rank {
+    my $self = shift;
+    $self->{y_rank} = shift if @_;
+    return $self->{y_rank};
+}  # }}}
+
+#     6 * sum((R_i - S_i)^2)
 # 1 - ----------------------
 #         N * (N^2 - 1)
-sub spearman {
-    my ($u, $v) = @_;
-
-    # Bail if either vector is empty. 
-    croak "Both vectors must be defined and have numerical elements\n"
-        unless ($u && $v) && (@$u && @$v);
-
-    # "Normalize" the vectors.
-    ($u, $v) = _pad_vectors($u, $v);
+sub spearman {  # {{{
+    my $self = shift;
 
     # Initialize the squared rank difference sum.
-    my $sum = 0;
+    my $sq_sum = 0;
+
     # Compute the squared rank difference sum.
-    for my $i (0 .. @$u - 1) {
-        $sum += ($u->[$i] - $v->[$i]) ** 2;
+    for (0 .. $self->{size} - 1) {
+        $sq_sum += ($self->{x_rank}[$_] - $self->{y_rank}[$_]) ** 2;
+#warn "$sq_sum\n += ($self->{x_rank}[$_] - $self->{y_rank}[$_]) ** 2";
     }
 
-    # Return the rank correlation coefficient.
-    return 1 - ((6 * $sum) / (@$u * ((@$u ** 2) - 1)));
-}
+#warn "1 - ( (6 * $sq_sum) / ( $self->{size} * (( $self->{size} ** 2 ) - 1))\n";
+    return 1 - ( (6 * $sq_sum) /
+        ( $self->{size} * (( $self->{size} ** 2 ) - 1))
+    );
+}  # }}}
 
-#        sum[ (X_i - X_ave) * (Y_i - Y_ave) ]
-# -------------------------------------------------------
-# sqrt{ sum[ (X_i - X_ave)^2 ] * sum[ (Y_i - Y_ave)^2 ] }
-#
-#             sum(x * y) - [ sum(x) * sum(y) / N ]
-# ----------------------------------------------------------------
-#sqrt{ [ sum(x^2) - sum(x)^2 / N ] * [ sum(y^2) - sum(y)^2 / N ] }
-sub correlation_coefficient {
-    my ($u, $v) = @_;
-    
-    # Bail if either vector is empty. 
-    croak "Both vectors must be defined and have numerical elements\n"
-        unless ($u && $v) && (@$u && @$v);
-        
-    # "Normalize" the vectors.
-    ($u, $v) = _pad_vectors($u, $v);
+# Return vector ranks, with averaged ties.
+# http://software.biostat.washington.edu/~rossini/courses/intro-nonpar/text/Tied_Data.html#SECTION00427000000000000000
+sub _rank {  # {{{
+    my $u = shift;
 
-    my $u_ave = 0;
-    $u_ave += $_ for @$u;
-    $u_ave /= @$u;
+    # Rank the sorted vector with an HoL.
+    my %rank;
+    push @{ $rank{$u->[$_]} }, $_ + 1 for 0 .. @$u - 1;
 
-    my $v_ave = 0;
-    $v_ave += $_ for @$v;
-    $v_ave /= @$v;
+    # Set the ranks and average any tied data.
+    my @ranks;
+    for my $x (sort { $a <=> $b } keys %rank) {
+        # Get the number of ties.
+        my $ties = @{ $rank{$x} };
 
-    my ($numerator, $denominator) = (0, 0);
-    my ($u_denominator, $v_denominator) = (0, 0);
-
-    for my $i (0 .. @$u - 1) {
-        my $u_numerator = ($u->[$i] - $u_ave);
-        my $v_numerator = ($v->[$i] - $v_ave);
-
-        $numerator += $u_numerator * $v_numerator;
-
-        $u_denominator += $u_numerator ** 2;
-        $v_denominator += $v_numerator ** 2;
+        if ($ties > 1) {
+            # Average the tied data.
+            my $average = 0;
+            $average += $_ for @{ $rank{$x} };
+            $average /= $ties;
+            # Add the tied rank average to the array of ranks.
+            push @ranks, ($average) x $ties;
+        }
+        else {
+            # Add the sole rank to the list of ranks.
+            push @ranks, $rank{$x}[0];
+        }
     }
 
-    return $numerator / sqrt($u_denominator * $v_denominator);
-}
+    return \@ranks;
+}  # }}}
 
 # Get the "contour similarity index measure" number - a single 
 # dimensional measure of higher or lower value between two vectors.
-sub csim {
-    my ($u, $v) = @_;
-
-    # Bail if either vector is empty.
-    croak "Both vectors must be defined and have numerical elements\n"
-        unless ($u && $v) && (@$u && @$v);
-
-    # "Normalize" the vectors.
-    ($u, $v) = _pad_vectors($u, $v);
+sub csim {  # {{{
+    my $self = shift;
 
     # Get the pitch matrices for each vector.
-    my $m1 = _correlation_matrix($u);
+    my $m1 = _correlation_matrix($self->{x_data});
 #warn map { "@$_\n" } @$m1;
-    my $m2 = _correlation_matrix($v);
+    my $m2 = _correlation_matrix($self->{y_data});
 #warn map { "@$_\n" } @$m2;
 
     # Compute the rank correlation.
@@ -106,11 +138,11 @@ sub csim {
     # Return the rank correlation normalized by the number of rows in
     # the pitch matrices.
     return $k / (@$m1 * @$m1);
-}
+}  # }}}
 
 # Append zeros to either vector for all values in the other that do
 # not have a corresponding value.
-sub _pad_vectors {
+sub _pad_vectors {  # {{{
     my ($u, $v) = @_;
 
     if (@$u > @$v) {
@@ -121,11 +153,11 @@ sub _pad_vectors {
     }
 
     return $u, $v;
-}
+}  # }}}
 
 # Build a square, binary matrix that represents "higher or lower"
 # value within the given vector.
-sub _correlation_matrix {
+sub _correlation_matrix {  # {{{
     my $u = shift;
     my $c;
 
@@ -137,7 +169,7 @@ sub _correlation_matrix {
     }
 
     return $c;
-}
+}  # }}}
 
 1;
 
@@ -149,17 +181,12 @@ Statistics::RankCorrelation - Compute the rank correlation between two vectors
 
 =head1 SYNOPSIS
 
-  use Statistics::RankCorrelation qw(
-      csim
-      spearman
-      correlation_coefficient
-  );
+  use Statistics::RankCorrelation;
 
-  $n = csim(\@u, \@v);
+  $c = Statistics::RankCorrelation->new(\@u, \@v);
 
-  $n = spearman(\@u, \@v);
-
-  $n = correlation_coefficient(\@u, \@v);
+  $n = $c->spearman;
+  $n = $c->csim;
 
 =head1 DESCRIPTION
 
@@ -174,30 +201,21 @@ Okay.  Some definitions are always in order:
 Statistical rank: The ordinal number of a value in a list arranged in 
 a specified order (usually decreasing).
 
-=head1 EXPORTED FUNCTIONS
+=head1 PUBLIC METHODS
 
-=head2 spearman $VECTOR1, $VECTOR2
+=head2 spearman
 
-  $n = spearman($u, $v);
+  $n = $c->spearman;
 
 Spearman rank-order correlation is a nonparametric measure of 
 association based on the rank of the data values.
 
-=head2 correlation_coefficient $VECTOR1, $VECTOR2
+The Spearman correlation is a special case of the Pearson 
+product-moment correlation.
 
-  $n = correlation_coefficient($u, $v);
+=head2 csim
 
-A correlation describes the strength of an association between 
-variables. An association between variables means that the value of 
-one variable can be predicted, to some extent, by the value of the 
-other.
-
-Note: This function "will only work when there is a linear relation 
-between the variables".
-
-=head2 csim $VECTOR1, $VECTOR2
-
-  $n = csim($u, $v);
+  $n = $c->csim;
 
 Return the "contour similarity index measure", which is a single 
 dimensional measure of the similarity between two vectors.
@@ -209,6 +227,18 @@ original vectors.
 Please consult the C<csim> item under the C<SEE ALSO> section.
 
 =head1 PRIVATE FUNCTIONS
+
+=head2 _rank
+
+  $u_ranks = _rank(\@u);
+
+Return an array reference of the ordinal ranks of the given data.
+
+In the case of a tie in the data (identical values) the rank numbers
+are averaged.  An example will help:
+
+  data  = [1.0, 2.1, 3.2, 3.2, 3.2, 4.3]
+  ranks = [1, 2, 9.6/3, 9.6/3, 9.6/3, 4]
 
 =head2 _pad_vectors
 
@@ -243,9 +273,13 @@ C<http://www.pinkmonkey.com/studyguides/subjects/stats/chap6/s0606801.asp>
 
 C<http://fonsg3.let.uva.nl/Service/Statistics/RankCorrelation_coefficient.html>
 
+C<http://www.statsoftinc.com/textbook/stnonpar.html#correlations>
+
+C<http://software.biostat.washington.edu/~rossini/courses/intro-nonpar/text/Tied_Data.html#SECTION00427000000000000000>
+
 =head1 TO DO
 
-Remember how to export without using the bloated C<Exporter> module.
+Implement the tie averaging done in Spearman's R.
 
 Make a comprehensive test suite with a data file for all functions 
 to use.

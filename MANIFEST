@@ -4,6 +4,4 @@ Makefile.PL
 MANIFEST
 MANIFEST.SKIP
 README
-t/correlation_coefficient.t
-t/csim.t
-t/spearman.t
+t/1.t
