@@ -1,5 +1,8 @@
 Changes file for Statistics::RankCorrelation
 
+0.0901  Fri Aug 13 2004
+    - Whoops.  Forgot to increment the number of known tests. :\
+
 0.09  Fri Aug 13 2004
     - Removed the unnecessary pair_sort() function.
     - Replaced rgw rank() function with the code from Thomas Breslin.

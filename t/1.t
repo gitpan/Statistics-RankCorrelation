@@ -2,7 +2,7 @@
 BEGIN {
     use strict;
     use warnings;
-    use Test::More tests => 24;
+    use Test::More tests => 26;
     use_ok 'Statistics::RankCorrelation';
 }
 
@@ -62,7 +62,7 @@ $obj = Statistics::RankCorrelation->new(\@x, \@y);
 $r = 0.942857142857143;
 is $obj->spearman, $r, "$r tied rank spearman positive correlation";
 $r = 0.916666666666667;
-is $obj->csim, $r, "$r tied rankcsim positive correlation";
+is $obj->csim, $r, "$r tied rank csim positive correlation";
 
 # http://fonsg3.let.uva.nl/Service/Statistics/RankCorrelation_coefficient.html
 @x = qw( 579 509 527 516 592 503 511 517 538 );
