@@ -1,5 +1,12 @@
 Changes file for Statistics::RankCorrelation
 
+0.08  Wed Dec 30 2003
+    - Made the object auto-initialize if given vectors and not die,
+      if not.
+    - Added a test for this "no-argument" constructor case.
+    - Added eg/boolean_grids to show what the correlation_matrix()
+      method does.
+
 0.07  Wed Dec 30 2003
     - Added the missing pair sorting function and now this module
       works correctly.

@@ -1,6 +1,9 @@
 use strict;
-use Test::More tests => 23;
+use Test::More tests => 24;
 BEGIN { use_ok 'Statistics::RankCorrelation' }
+
+my $obj = eval { Statistics::RankCorrelation->new };
+isa_ok $obj, 'Statistics::RankCorrelation', 'no argument constructor';
 
 my $r;  # result display confirmation
 
@@ -8,7 +11,7 @@ my @x      = qw( 0 0 0 0 );
 my @x_rank = qw( 2.5 2.5 2.5 2.5 ); 
 my @y      = qw( 0 );
 my @y_rank = qw( 2.5 2.5 2.5 2.5 );
-my $obj = eval { Statistics::RankCorrelation->new( \@x, \@y ) };
+$obj = eval { Statistics::RankCorrelation->new( \@x, \@y ) };
 isa_ok $obj, 'Statistics::RankCorrelation';
 is_deeply $obj->x_data, \@x, 'all zero x_data';
 is_deeply $obj->y_data, \@x, 'all zero y_data zero padded';

@@ -1,4 +1,5 @@
 CHANGES
+eg/boolean_grids
 eg/permutations
 lib/Statistics/RankCorrelation.pm
 Makefile.PL

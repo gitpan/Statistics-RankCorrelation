@@ -1,18 +1,17 @@
-# $Id: RankCorrelation.pm,v 1.16 2003/12/31 18:52:18 gene Exp $
+# $Id: RankCorrelation.pm,v 1.19 2004/01/01 04:09:32 gene Exp $
 
 package Statistics::RankCorrelation;
 use vars qw($VERSION);
-$VERSION = '0.07';
+$VERSION = '0.08';
 use strict;
-#use warnings;
 use Carp;
 
 sub new {  # {{{
     my $proto = shift;
     my $class = ref ($proto) || $proto;
     my $self = {
-        x_data => shift,
-        y_data => shift,
+        x_data => shift || [],
+        y_data => shift || [],
     };
     bless $self, $class;
     $self->_init;
@@ -22,27 +21,28 @@ sub new {  # {{{
 sub _init {  # {{{
     my $self = shift;
 
-    # Bail if either vector is empty. 
-    croak "Both vectors must be defined with numerical elements\n"
-        unless ( $self->x_data && $self->y_data ) &&
-               ( @{ $self->x_data } && @{ $self->y_data });
+    # Automatically compute the statistical ranks if given vectors.
+    if(
+        ( $self->x_data && $self->y_data ) &&
+        ( @{ $self->x_data } && @{ $self->y_data } )
+    ) {
+        # "co-normalize" the vectors.
+        ( $self->{x_data}, $self->{y_data} ) = pad_vectors(
+            $self->x_data, $self->y_data
+        );
 
-    # "co-normalize" the vectors.
-    ( $self->{x_data}, $self->{y_data} ) = pad_vectors(
-        $self->x_data, $self->y_data
-    );
+        # Sort the vectors as measurement pairs by the x set.
+        ( $self->{x_data}, $self->{y_data} ) = pair_sort(
+            $self->x_data, $self->y_data
+        );
 
-    # Sort the vectors as measurement pairs by the x set.
-    ( $self->{x_data}, $self->{y_data} ) = pair_sort(
-        $self->x_data, $self->y_data
-    );
+        # Set the ranks of the vectors.
+        $self->x_rank( rank( $self->x_data ) );
+        $self->y_rank( rank( $self->y_data ) );
 
-    # Set the ranks of the vectors.
-    $self->x_rank( rank( $self->x_data ) );
-    $self->y_rank( rank( $self->y_data ) );
-
-    # Set the size of the unit data vector.
-    $self->{size} = @{ $self->x_data };
+        # Set the size of the unit data vector.
+        $self->{size} = @{ $self->x_data };
+    }
 }  # }}}
 
 # Accessors {{{
@@ -210,39 +210,40 @@ Statistics::RankCorrelation - Compute the rank correlation between two vectors
 This module computes rank correlation coefficient measures between two 
 sample vectors.
 
-Working examples may be found in the distribution C<eg> directory and 
+Working examples may be found in the distribution C<eg/> directory and 
 the module test file.
 
 Also the C<HANDY FUNCTIONS> section below has some ..handy functions 
-to use when computing sorted rank cooefficients by hand.
+to use when computing sorted rank coefficients by hand.
 
 =head1 PUBLIC METHODS
 
-=head2 new VECTOR1, VECTOR2
+=head2 new
 
   $c = Statistics::RankCorrelation->new( \@u, \@v );
 
-This method constructs a new C<Statistics::RankCorrelation> object
-with two vectors.
+This method constructs a new C<Statistics::RankCorrelation> object.
 
-The object is initialized by computing the statistical ranks of the 
-vectors.  If they are of different cardinality the shorter vector is 
-first padded with trailing zeros.
+If given two numeric vectors (in the form of flat array references) as 
+arguments the object is initialized by computing the statistical ranks 
+of the vectors.  If they are of different cardinality the shorter 
+vector is first padded with trailing zeros.
 
 =head2 x_data, y_data
 
   $x = $c->x_data;
-  $y = $c->y_data;
+  $c->y_data( $y );
 
-Return the original data samples that were provided to the constructor 
-as array references.
+Return (and optionally set) the data samples that were provided to 
+the constructor as array references.
 
 =head2 x_rank, y_rank
 
-  $x = $c->x_rank;
-  $y = $c->y_rank;
+  $rx = $c->x_rank;
+  $c->y_rank( $ry );
 
-Return the statistically ranked data samples as array references.
+Return (and optionally set) the statistically ranked data samples as 
+array references.
 
 =head2 spearman
 
@@ -261,9 +262,6 @@ The formula is:
 Where C<X> and C<Y> are the two rank vectors and C<i> is an index 
 from one to the C<N> number of samples.
 
-In other words C<Xi> is the statistical rank of the value in the 
-C<ith> position of the original C<X> data vector.
-
 =head2 csim
 
   $n = $c->csim;
@@ -271,9 +269,9 @@ C<ith> position of the original C<X> data vector.
 Return the contour similarity index measure.  This is a single 
 dimensional measure of the similarity between two vectors.
 
-This returns a measure in the range C<[-1..1]> and is computed using
-matrices of binary data representing "higher or lower" values in the
-original vectors.
+This returns a measure in the (inclusive) range C<[-1..1]> and is 
+computed using matrices of binary data representing "higher or lower" 
+values in the original vectors.
 
 This measure has been studied in musical contour analysis.
 
