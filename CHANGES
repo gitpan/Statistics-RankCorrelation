@@ -1,28 +1,33 @@
 Changes file for Statistics::RankCorrelation
 
-0.01 Sun Aug  3 13:31:57 2003
-    - Created with Module::Husbandry.
+0.0502  Sun Sep 27 2003
+    - The $VERSION should be an actual number and on its own line.
+    - Cleaned up POD a tiny bit.
+    - Reversed chrono-sort on this file.
 
-0.02 Mon Aug  4 2003
-    - Renamed binary() to csim().
-    - Added correlation_coefficient()
-    - Added more SEE ALSO references.
-    - Cleaned up and enhanced POD.
+0.05.1  Sun Sep 21 2003
+    - Just cleaned up POD.  No functional changes made.
 
-0.03 Wed Aug  6 2003
+0.05  Wed Aug 6 2003
+    - Fixed stupidity in POD.
+    - Compressed average code in _rank().
+
+0.04  Wed Aug 6 2003
+    - Fixed and enhanced POD.
+    - Removed the assignment from the *_data accessors.
+
+0.03  Wed Aug 6 2003
     - IT ACTUALLY WORKS NOW.
     - Added x_* and y_* object attributes and accessors.
     - Compute the x and y ranks in _init().
     - Enhanced POD.
     - Made a proper 1.t script.
 
-0.04 Wed Aug  6 2003
-    - Fixed and enhanced POD.
-    - Removed the assignment from the *_data accessors.
+0.02  Mon Aug 4 2003
+    - Renamed binary() to csim().
+    - Added correlation_coefficient()
+    - Added more SEE ALSO references.
+    - Cleaned up and enhanced POD.
 
-0.05 Wed Aug  6 2003
-    - Fixed stupidity in POD.
-    - Compressed average code in _rank().
-
-0.05.1 Sun Sep 21 2003
-    - Just cleaned up POD.  No functional changes made.
+0.01  Sun Aug 3 13:31:57 2003
+    - Created with Module::Husbandry.

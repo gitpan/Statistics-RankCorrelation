@@ -1,8 +1,8 @@
 CHANGES
 lib/Statistics/RankCorrelation.pm
 Makefile.PL
-MANIFEST
+MANIFEST			This list of files
 MANIFEST.SKIP
+META.yml
 README
 t/1.t
-META.yml                                Module meta-data (added by MakeMaker)

@@ -1,7 +1,8 @@
-# $Id: RankCorrelation.pm,v 1.8 2003/08/07 01:11:28 gene Exp $
+# $Id: RankCorrelation.pm,v 1.10 2003/09/28 07:15:05 gene Exp $
 
 package Statistics::RankCorrelation;
-use vars qw($VERSION); $VERSION = '0.05.1';
+use vars qw($VERSION);
+$VERSION = '0.0502';
 use strict;
 use Carp;
 
@@ -276,7 +277,7 @@ Return the correlation matrix for a single vector.
 This function builds a square, binary matrix that represents "higher 
 or lower" value within the vector itself.
 
-=head1 To DO
+=head1 TO DO
 
 Implement other rank correlation measures that are out there.
 
