@@ -1,51 +1,44 @@
-# $Id: RankCorrelation.pm,v 1.19 2004/01/01 04:09:32 gene Exp $
+# $Id: RankCorrelation.pm,v 1.21 2004/08/13 17:58:03 gene Exp $
 
 package Statistics::RankCorrelation;
-use vars qw($VERSION);
-$VERSION = '0.08';
+$VERSION = 0.09;
 use strict;
+use warnings;
 use Carp;
 
-sub new {  # {{{
+sub new {
     my $proto = shift;
     my $class = ref ($proto) || $proto;
-    my $self = {
+    my $self  = {
         x_data => shift || [],
         y_data => shift || [],
     };
     bless $self, $class;
     $self->_init;
     return $self;
-}  # }}}
+}
 
-sub _init {  # {{{
+sub _init {
     my $self = shift;
 
     # Automatically compute the statistical ranks if given vectors.
-    if(
-        ( $self->x_data && $self->y_data ) &&
-        ( @{ $self->x_data } && @{ $self->y_data } )
+    if( ( $self->{x_data} && $self->{y_data} ) &&
+        ( @{ $self->{x_data} } && @{ $self->{y_data} } )
     ) {
         # "co-normalize" the vectors.
         ( $self->{x_data}, $self->{y_data} ) = pad_vectors(
-            $self->x_data, $self->y_data
-        );
-
-        # Sort the vectors as measurement pairs by the x set.
-        ( $self->{x_data}, $self->{y_data} ) = pair_sort(
-            $self->x_data, $self->y_data
+            $self->{x_data}, $self->{y_data}
         );
 
         # Set the ranks of the vectors.
-        $self->x_rank( rank( $self->x_data ) );
-        $self->y_rank( rank( $self->y_data ) );
+        $self->x_rank( rank( $self->{x_data} ) );
+        $self->y_rank( rank( $self->{y_data} ) );
 
         # Set the size of the unit data vector.
-        $self->{size} = @{ $self->x_data };
+        $self->{size} = @{ $self->{x_data} };
     }
-}  # }}}
+}
 
-# Accessors {{{
 sub x_data {
     my $self = shift;
     $self->{x_data} = shift if @_;
@@ -68,10 +61,10 @@ sub y_rank {
     my $self = shift;
     $self->{y_rank} = shift if @_;
     return $self->{y_rank};
-}  # }}}
+}
 
 # Return Spearman's rho correlation coefficient.
-sub spearman {  # {{{
+sub spearman {
     my $self = shift;
 
     # Initialize the squared rank difference sum.
@@ -87,52 +80,43 @@ sub spearman {  # {{{
     return 1 - ( (6 * $sq_sum) /
         ( $self->{size} * (( $self->{size} ** 2 ) - 1))
     );
-}  # }}}
+}
 
 # Sort the given vectors as measurement pairs by the x data.
-sub pair_sort {  # {{{
-    my ( $x, $y ) = @_;
 
-    my @pairs =
-        sort { $a->[0] <=> $b->[0] }
-            map { [ $x->[$_], $y->[$_] ] }
-                0 .. @$x - 1;
-
-    return [ map { $_->[0] } @pairs ], [ map { $_->[1] } @pairs ];
-}  # }}}
-
-# Return ranks, with averaged ties of a pre-sorted vector.
-sub rank {  # {{{
+sub rank {
     my $u = shift;
 
     # Make a list of ranks for each datum.
     my %rank;
-    push @{ $rank{ $u->[$_] } }, $_ + 1 for 0 .. @$u - 1;
+    push @{ $rank{ $u->[$_] } }, $_ for 0 .. @$u - 1;
 
-    # Set the averaged ranks. 
+    my ($old, $cur) = (0, 0);
+
+    # Set the averaged ranks.
     my @ranks;
     for my $x (sort { $a <=> $b } keys %rank) {
         # Get the number of ties.
         my $ties = @{ $rank{$x} };
+        $cur += $ties;
 
         if ($ties > 1) {
             # Average the tied data.
-            my $average = 0;
-            $average += $_ / $ties for @{ $rank{$x} };
-            # Add the tied rank averages to the array of ranks.
-            push @ranks, ($average) x $ties;
+            my $average = $old + ($ties + 1) / 2;
+            $ranks[$_] = $average for @{ $rank{$x} };
         }
         else {
             # Add the single rank to the list of ranks.
-            push @ranks, $rank{$x}[0];
+            $ranks[ $rank{$x}[0] ] = $cur;
         }
+
+        $old = $cur;
     }
 
     return \@ranks;
-}  # }}}
+}
 
-# Return the "contour similarity index measure".
-sub csim {  # {{{
+sub csim {
     my $self = shift;
 
     # Get the pitch matrices for each vector.
@@ -152,11 +136,11 @@ sub csim {  # {{{
     # Return the rank correlation normalized by the number of rows in
     # the pitch matrices.
     return $k / (@$m1 * @$m1);
-}  # }}}
+}
 
 # Append zeros to either vector for all values in the other that do
 # not have a corresponding value.
-sub pad_vectors {  # {{{
+sub pad_vectors {
     my ($u, $v) = @_;
 
     if (@$u > @$v) {
@@ -167,11 +151,11 @@ sub pad_vectors {  # {{{
     }
 
     return $u, $v;
-}  # }}}
+}
 
 # Build a square, binary matrix that represents "higher or lower"
 # value within the given vector.
-sub correlation_matrix {  # {{{
+sub correlation_matrix {
     my $u = shift;
     my $c;
 
@@ -183,7 +167,7 @@ sub correlation_matrix {  # {{{
     }
 
     return $c;
-}  # }}}
+}
 
 1;
 
@@ -279,8 +263,8 @@ This measure has been studied in musical contour analysis.
 
 =head2 rank
 
-  $ranks = rank( [ 1.0, 2.1, 3.2, 3.2, 3.2, 4.3 ] );
-  # [1, 2, 4, 4, 4, 6]
+  $ranks = rank( [ 1.0, 3.2, 2.1, 3.2, 3.2, 4.3 ] );
+  # [1, 4, 2, 4, 4, 6]
 
 Return an array reference of the ordinal ranks of the given data.
 
@@ -292,18 +276,10 @@ In the case of a tie in the data (identical values) the rank numbers
 are averaged.  An example will elucidate:
 
   sorted data:    [ 1.0, 2.1, 3.2, 3.2, 3.2, 4.3 ]
-  ranks:          [ 1,   2,   3,   4    5,   6   ]
+  ranks:          [ 1,   2,   3,   4,   5,   6   ]
   tied ranks:     3, 4, and 5
   tied average:   (3 + 4 + 5) / 3 == 4
   averaged ranks: [ 1,   2,   4,   4,   4,   6   ]
-
-=head2 pair_sort
-
-  ( $x, $y ) = pair_sort( [ 3, 5, 1, 1, 4 ], [ 9, 6, 3, 0, 9 ] );
-  # [1, 1, 3, 4, 5], [0, 3, 9, 9, 6]
-
-Sort two given vectors as measurement pairs in numerical ascending 
-order by the first (x) array.
 
 =head2 pad_vectors
 
@@ -348,6 +324,10 @@ C<http://www.statsoftinc.com/textbook/stnonpar.html#correlations>
 C<http://www.analytics.washington.edu/~rossini/courses/intro-nonpar/text/Tied_Data.html>
 
 C<http://www.analytics.washington.edu/~rossini/courses/intro-nonpar/text/Spearman_s_tex2html_image_mark_tex2html_wrap_inline4049_.html>
+
+=head1 THANK YOU
+
+Thomas Breslin E<lt>thomas@thep.lu.seE<gt> for unsorted C<rank> code.
 
 =head1 AUTHOR
 

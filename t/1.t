@@ -1,6 +1,10 @@
-use strict;
-use Test::More tests => 24;
-BEGIN { use_ok 'Statistics::RankCorrelation' }
+#!/usr/bin/perl
+BEGIN {
+    use strict;
+    use warnings;
+    use Test::More tests => 24;
+    use_ok 'Statistics::RankCorrelation';
+}
 
 my $obj = eval { Statistics::RankCorrelation->new };
 isa_ok $obj, 'Statistics::RankCorrelation', 'no argument constructor';
@@ -50,6 +54,15 @@ $r = 0.833333333333333;
 is $obj->spearman, $r, "$r spearman positive correlation";
 $r = 0.84375;
 is $obj->csim, $r, "$r csim positive correlation";
+
+# tied ranks
+@x = qw( 1   3   2   4   5   6   );
+@y = qw( 1.0 3.2 2.1 3.2 3.2 4.3 );
+$obj = Statistics::RankCorrelation->new(\@x, \@y);
+$r = 0.942857142857143;
+is $obj->spearman, $r, "$r tied rank spearman positive correlation";
+$r = 0.916666666666667;
+is $obj->csim, $r, "$r tied rankcsim positive correlation";
 
 # http://fonsg3.let.uva.nl/Service/Statistics/RankCorrelation_coefficient.html
 @x = qw( 579 509 527 516 592 503 511 517 538 );

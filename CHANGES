@@ -1,5 +1,11 @@
 Changes file for Statistics::RankCorrelation
 
+0.09  Fri Aug 13 2004
+    - Removed the unnecessary pair_sort() function.
+    - Replaced rgw rank() function with the code from Thomas Breslin.
+    - Added a test for tied ranks. (How did I not do this before?!?)
+    - Updated POD accordingly.
+
 0.08  Wed Dec 30 2003
     - Made the object auto-initialize if given vectors and not die,
       if not.
