@@ -1,7 +1,7 @@
-# $Id: RankCorrelation.pm,v 1.6 2003/08/06 17:00:36 gene Exp $
+# $Id: RankCorrelation.pm,v 1.8 2003/08/07 01:11:28 gene Exp $
 
 package Statistics::RankCorrelation;
-use vars qw($VERSION); $VERSION = '0.04';
+use vars qw($VERSION); $VERSION = '0.05';
 use strict;
 use Carp;
 
@@ -61,7 +61,7 @@ sub y_rank {
     return $self->{y_rank};
 }  # }}}
 
-# Retrn Spearman's rho correlation coefficient.
+# Return Spearman's rho correlation coefficient.
 sub spearman {  # {{{
     my $self = shift;
 
@@ -97,13 +97,12 @@ sub _rank {  # {{{
         if ($ties > 1) {
             # Average the tied data.
             my $average = 0;
-            $average += $_ for @{ $rank{$x} };
-            $average /= $ties;
-            # Add the tied rank average to the array of ranks.
+            $average += $_ / $ties for @{ $rank{$x} };
+            # Add the tied rank averages to the array of ranks.
             push @ranks, ($average) x $ties;
         }
         else {
-            # Add the sole rank to the list of ranks.
+            # Add the single rank to the list of ranks.
             push @ranks, $rank{$x}[0];
         }
     }
@@ -259,10 +258,13 @@ Please consult the C<csim> item under the C<SEE ALSO> section.
 Return an array reference of the ordinal ranks of the given data.
 
 In the case of a tie in the data (identical values) the rank numbers
-are averaged.  An example will help:
+are averaged.  An example will elucidate:
 
-  data  = [1.0, 2.1, 3.2,   3.2,   3.2,   4.3]
-  ranks = [1,   2,   9.6/3, 9.6/3, 9.6/3, 4]
+  sorted data:    [ 1.0, 2.1, 3.2, 3.2, 3.2, 4.3 ]
+  ranks:          [ 1,   2,   3,   4    5,   6   ]
+  tied ranks:     3, 4, and 5
+  tied average:   (3 + 4 + 5) / 3 == 12 / 3 == 4
+  averaged ranks: [ 1,   2,   4,   4,   4,   6   ]
 
 =head2 _pad_vectors
 
@@ -287,7 +289,7 @@ For the C<csim> method:
 
 C<http://www2.mdanderson.org/app/ilya/Publications/JNMRcontour.pdf>
 
-For the <Cspearman> method:
+For the C<spearman> method:
 
 C<http://mathworld.wolfram.com/SpearmanRankCorrelationCoefficient.html>
 

@@ -19,3 +19,7 @@ Changes file for Statistics::RankCorrelation
 0.04 Wed Aug  6 2003
     - Fixed and enhanced POD.
     - Removed the assignment from the *_data accessors.
+
+0.05 Wed Aug  6 2003
+    - Fixed stupidity in POD.
+    - Compressed average code in _rank().
