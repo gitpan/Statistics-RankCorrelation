@@ -1,6 +1,9 @@
 CHANGES
-MANIFEST
-Makefile.PL
-README
 lib/Statistics/RankCorrelation.pm
-t/Statistics-RankCorrelation.t
+Makefile.PL
+MANIFEST
+MANIFEST.SKIP
+README
+t/correlation_coefficient.t
+t/csim.t
+t/spearman.t

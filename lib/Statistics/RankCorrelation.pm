@@ -1,14 +1,20 @@
+# $Id: RankCorrelation.pm,v 1.2 2003/08/04 15:32:20 gene Exp $
+
 package Statistics::RankCorrelation;
 use strict;
-use vars qw($VERSION); $VERSION = '0.01';
+use vars qw($VERSION); $VERSION = '0.02';
 use Carp;
 use base qw(Exporter);
 use vars qw(@EXPORT);
 @EXPORT = qw(
-    binary
+    csim 
     spearman
+    correlation_coefficient
 );
 
+#     6 * sum((X_i - Y_i)^2)
+# 1 - ----------------------
+#         N * (N^2 - 1)
 sub spearman {
     my ($u, $v) = @_;
 
@@ -21,20 +27,59 @@ sub spearman {
 
     # Initialize the squared rank difference sum.
     my $sum = 0;
-
     # Compute the squared rank difference sum.
     for my $i (0 .. @$u - 1) {
-        my $rank = $u->[$i] - $v->[$i];
-        $sum += $rank ** 2;
+        $sum += ($u->[$i] - $v->[$i]) ** 2;
     }
 
     # Return the rank correlation coefficient.
     return 1 - ((6 * $sum) / (@$u * ((@$u ** 2) - 1)));
 }
 
-# Get the "rank correlation" number - a single dimensional measure of
-# higher or lower value between two vectors.
-sub binary {
+#        sum[ (X_i - X_ave) * (Y_i - Y_ave) ]
+# -------------------------------------------------------
+# sqrt{ sum[ (X_i - X_ave)^2 ] * sum[ (Y_i - Y_ave)^2 ] }
+#
+#             sum(x * y) - [ sum(x) * sum(y) / N ]
+# ----------------------------------------------------------------
+#sqrt{ [ sum(x^2) - sum(x)^2 / N ] * [ sum(y^2) - sum(y)^2 / N ] }
+sub correlation_coefficient {
+    my ($u, $v) = @_;
+    
+    # Bail if either vector is empty. 
+    croak "Both vectors must be defined and have numerical elements\n"
+        unless ($u && $v) && (@$u && @$v);
+        
+    # "Normalize" the vectors.
+    ($u, $v) = _pad_vectors($u, $v);
+
+    my $u_ave = 0;
+    $u_ave += $_ for @$u;
+    $u_ave /= @$u;
+
+    my $v_ave = 0;
+    $v_ave += $_ for @$v;
+    $v_ave /= @$v;
+
+    my ($numerator, $denominator) = (0, 0);
+    my ($u_denominator, $v_denominator) = (0, 0);
+
+    for my $i (0 .. @$u - 1) {
+        my $u_numerator = ($u->[$i] - $u_ave);
+        my $v_numerator = ($v->[$i] - $v_ave);
+
+        $numerator += $u_numerator * $v_numerator;
+
+        $u_denominator += $u_numerator ** 2;
+        $v_denominator += $v_numerator ** 2;
+    }
+
+    return $numerator / sqrt($u_denominator * $v_denominator);
+}
+
+# Get the "contour similarity index measure" number - a single 
+# dimensional measure of higher or lower value between two vectors.
+sub csim {
     my ($u, $v) = @_;
 
     # Bail if either vector is empty.
@@ -104,61 +149,68 @@ Statistics::RankCorrelation - Compute the rank correlation between two vectors
 
 =head1 SYNOPSIS
 
-  use Statistics::RankCorrelation qw(binary spearman);
-
-  $n = binary(
-      [1,   2, 3,   4,      5],
-      [0.1, 2, 1.3, 0.004, 50]
+  use Statistics::RankCorrelation qw(
+      csim
+      spearman
+      correlation_coefficient
   );
 
-  $n = spearman(
-      [1,   2, 3,   4,      5],
-      [0.1, 2, 1.3, 0.004, 50]
-  );
+  $n = csim(\@u, \@v);
+
+  $n = spearman(\@u, \@v);
+
+  $n = correlation_coefficient(\@u, \@v);
 
 =head1 DESCRIPTION
 
 This module computes the rank correlation coefficient between two 
-samples.
-
-This can be thought of as vector similarity in terms of a single value.
+sample vectors.
 
 As an example, this metric is employed in the study of musical 
 contour similarity and "sample agreement".
 
+Okay.  Some definitions are always in order:
+
+Statistical rank: The ordinal number of a value in a list arranged in 
+a specified order (usually decreasing).
+
 =head1 EXPORTED FUNCTIONS
 
-=over 4
-
-=item binary $VECTOR1, $VECTOR2
-
-  $n = binary($u, $v);
-
-Return the "rank correlation" number, which is a single dimensional 
-measure of the values between two vectors.
-
-This returns a measure in the range [-1 .. 1] and is computed using
-matrices of binary data representing "higher or lower" values in the
-original vectors.
-
-Please consult the C<binary> item under the C<SEE ALSO> section.
-
-=item spearman $VECTOR1, $VECTOR2
+=head2 spearman $VECTOR1, $VECTOR2
 
   $n = spearman($u, $v);
 
-Return the "rank correlation" number, which is a single dimensional 
-measure of the values between two vectors.
+Spearman rank-order correlation is a nonparametric measure of 
+association based on the rank of the data values.
 
-Please consult the C<spearman> item under the C<SEE ALSO> section.
+=head2 correlation_coefficient $VECTOR1, $VECTOR2
 
-=back
+  $n = correlation_coefficient($u, $v);
+
+A correlation describes the strength of an association between 
+variables. An association between variables means that the value of 
+one variable can be predicted, to some extent, by the value of the 
+other.
+
+Note: This function "will only work when there is a linear relation 
+between the variables".
+
+=head2 csim $VECTOR1, $VECTOR2
+
+  $n = csim($u, $v);
+
+Return the "contour similarity index measure", which is a single 
+dimensional measure of the similarity between two vectors.
+
+This returns a measure in the range [-1..1] and is computed using
+matrices of binary data representing "higher or lower" values in the
+original vectors.
+
+Please consult the C<csim> item under the C<SEE ALSO> section.
 
 =head1 PRIVATE FUNCTIONS
 
-=over 4
-
-=item _pad_vectors()
+=head2 _pad_vectors
 
   ($u, $v) = _pad_vectors($u, $v);
 
@@ -166,7 +218,7 @@ Append zeros to either input vector for all values in the other that
 do not have a corresponding value.  That is, "pad" the tail of the 
 shorter vector with zero values.
 
-=item _correlation_matrix()
+=head2 _correlation_matrix
 
   $matrix = _correlation_matrix($u);
 
@@ -175,28 +227,32 @@ Return the correlation matrix for a single vector.
 This function builds a square, binary matrix that represents "higher 
 or lower" value within the vector itself.
 
-=back
-
 =head1 SEE ALSO
 
-For the C<binary> function:
+For the C<csim> function:
 
 C<http://www2.mdanderson.org/app/ilya/Publications/JNMRcontour.pdf>
 
-For the C<spearman> function:
+For the other functions:
+
+C<http://mathworld.wolfram.com/SpearmanRankCorrelationCoefficient.html>
+
+C<http://faculty.vassar.edu/lowry/ch3b.html>
 
 C<http://www.pinkmonkey.com/studyguides/subjects/stats/chap6/s0606801.asp>
+
+C<http://fonsg3.let.uva.nl/Service/Statistics/RankCorrelation_coefficient.html>
 
 =head1 TO DO
 
 Remember how to export without using the bloated C<Exporter> module.
 
-Implement other rank correlation measures (as referred to in the
-C<SEE ALSO> literature).
+Make a comprehensive test suite with a data file for all functions 
+to use.
 
-Add more literature references!
+Implement other rank correlation measures.  Here is a nice survey:
 
-Add the ability to compare more than two phrases simultaneously?
+C<http://jeff-lab.queensu.ca/stat/sas/sasman/sashtml/proc/zompmeth.htm>
 
 =head1 AUTHOR
 
