@@ -1,7 +1,7 @@
 # $Id: RankCorrelation.pm,v 1.8 2003/08/07 01:11:28 gene Exp $
 
 package Statistics::RankCorrelation;
-use vars qw($VERSION); $VERSION = '0.05';
+use vars qw($VERSION); $VERSION = '0.05.1';
 use strict;
 use Carp;
 
@@ -186,13 +186,6 @@ Statistics::RankCorrelation - Compute the rank correlation between two vectors
 This module computes the rank correlation coefficient between two 
 sample vectors.
 
-Some definitions are always in order:
-
-Statistical rank:  The ordinal number of a value's position in a list 
-sorted in a specified order (usually decreasing).
-
-Tied ranks:
-
 =head1 PUBLIC METHODS
 
 =head2 new VECTOR1, VECTOR2
@@ -282,6 +275,10 @@ Return the correlation matrix for a single vector.
 
 This function builds a square, binary matrix that represents "higher 
 or lower" value within the vector itself.
+
+=head1 To DO
+
+Implement other rank correlation measures that are out there.
 
 =head1 SEE ALSO
 
