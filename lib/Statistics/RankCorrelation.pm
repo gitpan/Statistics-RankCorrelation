@@ -1,8 +1,8 @@
-# $Id: RankCorrelation.pm,v 1.10 2003/09/28 07:15:05 gene Exp $
+# $Id: RankCorrelation.pm,v 1.13 2003/12/17 04:11:46 gene Exp $
 
 package Statistics::RankCorrelation;
 use vars qw($VERSION);
-$VERSION = '0.0502';
+$VERSION = '0.06';
 use strict;
 use Carp;
 
@@ -177,25 +177,31 @@ Statistics::RankCorrelation - Compute the rank correlation between two vectors
 
   use Statistics::RankCorrelation;
 
-  $c = Statistics::RankCorrelation->new(\@u, \@v);
+  $c = Statistics::RankCorrelation->new( \@u, \@v );
 
   $n = $c->spearman;
   $n = $c->csim;
 
 =head1 DESCRIPTION
 
-This module computes the rank correlation coefficient between two 
+This module computes rank correlation coefficient measures between two 
 sample vectors.
+
+Working examples may be found in the distribution C<eg> directory and 
+the module test file.
 
 =head1 PUBLIC METHODS
 
 =head2 new VECTOR1, VECTOR2
 
-  $c = Statistics::RankCorrelation->new(\@u, \@v);
+  $c = Statistics::RankCorrelation->new( \@u, \@v );
 
-This method constructs a new C<Statistics::RankCorrelation> object,
-"co-normalizes" (i.e. pad with trailing zero values) the vectors if 
-they are not the same size, and finds their statistical ranks.
+This method constructs a new C<Statistics::RankCorrelation> object
+with two vectors.
+
+The object is initialized by computing the statistical ranks of the 
+vectors.  If they are of different cardinality the shorter vector is 
+first padded with trailing zeros.
 
 =head2 x_data, y_data
 
@@ -210,44 +216,46 @@ as array references.
   $x = $c->x_rank;
   $y = $c->y_rank;
 
-Return the statistically ranked data samples that were provided to 
-the constructor as array references.
+Return the statistically ranked data samples as array references.
 
 =head2 spearman
 
   $n = $c->spearman;
 
 Spearman's rho rank-order correlation is a nonparametric measure of 
-association based on the rank of the data values.  The formula is:
+association based on the rank of the data values and is a special 
+case of the Pearson product-moment correlation.
 
-      6 * sum( (Ri - Si)^2 )
-  1 - ----------------------
-          N * (N^2 - 1)
+The formula is:
 
-Where Ri and Si are the ranks of the values of the two data vectors,
-and N is the number of samples in the vectors.
+      6 * sum( ( Xi - Yi ) ^ 2 )
+  1 - --------------------------
+          N * ( N ^ 2 - 1 )
 
-The Spearman correlation is a special case of the Pearson 
-product-moment correlation.
+Where C<X> and C<Y> are the two rank vectors and C<i> is an index 
+from one to the C<N> number of samples.
+
+In other words C<Xi> is the statistical rank of the value in the 
+C<ith> position of the original C<X> data vector.
 
 =head2 csim
 
   $n = $c->csim;
 
-Return the "contour similarity index measure", which is a single 
+Return the contour similarity index measure.  This is a single 
 dimensional measure of the similarity between two vectors.
 
-This returns a measure in the range [-1..1] and is computed using
+This returns a measure in the range C<[-1..1]> and is computed using
 matrices of binary data representing "higher or lower" values in the
 original vectors.
 
-Please consult the C<csim> item under the C<SEE ALSO> section.
+This measure has been studied in musical contour analysis.
 
 =head1 PRIVATE FUNCTIONS
 
 =head2 _rank
 
-  $u_ranks = _rank(\@u);
+  $u_ranks = _rank( \@u );
 
 Return an array reference of the ordinal ranks of the given data.
 
@@ -257,12 +265,12 @@ are averaged.  An example will elucidate:
   sorted data:    [ 1.0, 2.1, 3.2, 3.2, 3.2, 4.3 ]
   ranks:          [ 1,   2,   3,   4    5,   6   ]
   tied ranks:     3, 4, and 5
-  tied average:   (3 + 4 + 5) / 3 == 12 / 3 == 4
+  tied average:   (3 + 4 + 5) / 3 == 4
   averaged ranks: [ 1,   2,   4,   4,   4,   6   ]
 
 =head2 _pad_vectors
 
-  ($u, $v) = _pad_vectors($u, $v);
+  ( $u, $v ) = _pad_vectors( $u, $v );
 
 Append zeros to either input vector for all values in the other that 
 do not have a corresponding value.  That is, "pad" the tail of the 
@@ -270,7 +278,7 @@ shorter vector with zero values.
 
 =head2 _correlation_matrix
 
-  $matrix = _correlation_matrix($u);
+  $matrix = _correlation_matrix( $u );
 
 Return the correlation matrix for a single vector.
 
@@ -299,15 +307,19 @@ C<http://fonsg3.let.uva.nl/Service/Statistics/RankCorrelation_coefficient.html>
 
 C<http://www.statsoftinc.com/textbook/stnonpar.html#correlations>
 
-C<http://software.biostat.washington.edu/~rossini/courses/intro-nonpar/text/Tied_Data.html#SECTION00427000000000000000>
+C<http://www.analytics.washington.edu/~rossini/courses/intro-nonpar/text/Tied_Data.html>
+
+C<http://www.analytics.washington.edu/~rossini/courses/intro-nonpar/text/Spearman_s_tex2html_image_mark_tex2html_wrap_inline4049_.html>
 
 =head1 AUTHOR
 
 Gene Boggs E<lt>gene@cpan.orgE<gt>
 
-=head1 COPYRIGHT AND LICENSE
+=head1 COPYRIGHT
 
 Copyright 2003, Gene Boggs
+
+=head1 LICENSE
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself. 

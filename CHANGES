@@ -1,5 +1,11 @@
 Changes file for Statistics::RankCorrelation
 
+0.06  Mon Dec 15 2003
+    * No functionality changes in the module itself.
+    - Cleaned-up, repaired and smoothed out the documentation.
+    - Added eg/permutations to facilitate "eyeball checking".
+    - Added more cases to the test suite.
+
 0.0502  Sun Sep 27 2003
     - The $VERSION should be an actual number and on its own line.
     - Cleaned up POD a tiny bit.
