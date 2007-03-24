@@ -1,5 +1,12 @@
 Changes file for Statistics::RankCorrelation
 
+0.10  Sat Mar 24 2007
+    - Added Kendall's tau.
+    - Added data sorting.
+    - Added size accessor.
+    - Updated and improved documentation.
+    - Enhanced the test script.
+
 0.0901  Fri Aug 13 2004
     - Whoops.  Forgot to increment the number of known tests. :\
 
