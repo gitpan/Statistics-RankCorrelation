@@ -1,7 +1,7 @@
-# $Id: RankCorrelation.pm,v 1.29 2007/03/26 02:19:42 gene Exp $
+# $Id: RankCorrelation.pm,v 1.26 2007/03/24 17:50:59 gene Exp $
 
 package Statistics::RankCorrelation;
-our $VERSION = '0.11_1';
+our $VERSION = '0.10';
 use strict;
 use warnings;
 use Carp;
@@ -9,36 +9,44 @@ use Carp;
 sub new {
     my $proto = shift;
     my $class = ref($proto) || $proto;
-    my $self = {};
+
+    # Handle the unnamed single, pair and optional parameters.
+    my( $u, $v ) = ( shift, shift );
+    my %args = ();
+    # Two vectors and parameters given.
+    if( @_ ) {
+        %args = @_;
+    }
+    # Parameters given but no vectors.
+    elsif( $u =~ /^\D+$/ && $v ) {
+        $args{$u} = $v;
+    }
+    else {
+        # Empty object created.
+    }
+
+    my $self  = {
+        x_data => $u || [],
+        y_data => $v || [],
+        sorted => $args{sorted},
+    };
+
     bless $self, $class;
-    $self->_init(@_);
+    $self->_init;
     return $self;
 }
 
 sub _init {
     my $self = shift;
 
-    # Handle vector and named parameters.
-    while( my $arg = shift ) {
-        if( ref $arg eq 'ARRAY' ) {
-               if( !defined $self->x_data ) { $self->x_data( $arg ) }
-            elsif( !defined $self->y_data ) { $self->y_data( $arg ) }
-            # XXX Handle extra data. Thanks. Love, Gene.
-        }
-        elsif( !ref $arg ) {
-            my $v = shift;
-            $self->{$arg} = defined $v ? $v : $arg;
-        }
-    }
-
-    # Automatically compute the ranks if given data.
+    # Automatically compute the statistical ranks if given data.
     if( $self->x_data && $self->y_data &&
         @{ $self->x_data } && @{ $self->y_data }
     ) {
-        # "Co-normalize" the vectors if they are of unequal size.
+        # "Co-normalize" the vectors if they are unequal.
         my( $x, $y ) = pad_vectors( $self->x_data, $self->y_data );
 
-        # "Co-sort" the bivariate data set by the first one.
+        # "Co-sort" the vector pair by the first one.
         ( $x, $y ) = co_sort( $x, $y ) if $self->{sorted};
 
         # Set the massaged data.
@@ -48,13 +56,9 @@ sub _init {
         # Set the size of the data vector.
         $self->size( scalar @{ $self->x_data } );
 
-        # Set the ranks and ties of the vectors.
-        ( $x, $y ) = rank( $self->x_data );
-        $self->x_rank( $x );
-        $self->x_ties( $y );
-        ( $x, $y ) = rank( $self->y_data );
-        $self->y_rank( $x );
-        $self->y_ties( $y );
+        # Set the ranks of the vectors.
+        $self->x_rank( rank( $self->x_data ) );
+        $self->y_rank( rank( $self->y_data ) );
     }
 }
 
@@ -88,68 +92,58 @@ sub y_rank {
     return $self->{y_rank};
 }
 
-sub x_ties {
-    my $self = shift;
-    $self->{x_ties} = shift if @_;
-    return $self->{x_ties};
-}
-
-sub y_ties {
-    my $self = shift;
-    $self->{y_ties} = shift if @_;
-    return $self->{y_ties};
-}
-
 sub spearman_rho { goto \&spearman }
 sub spearman {
+# Return Spearman's rho correlation coefficient.
     my $self = shift;
-    # Compute the sum of the difference of the squared ranks.
+
+    # Initialize the squared rank difference sum.
     my $sq_sum = 0;
+
+    # Compute the sum of the absolute difference of the squared ranks.
     for( 0 .. $self->size - 1 ) {
-        $sq_sum += ($self->{x_rank}[$_] - $self->{y_rank}[$_]) ** 2;
+        $sq_sum += (abs(
+            $self->{x_rank}[$_] - $self->{y_rank}[$_]
+        )) ** 2;
+#warn "$sq_sum\n += ( $self->{x_rank}[$_] - $self->{y_rank}[$_] ) ** 2";
     }
-    # Return Spearman's rho.
-    return 1 - (6 * $sq_sum) / ($self->size ** 3 - $self->size);
+
+#     warn "1 - ( (6 * $sq_sum) / ( $self->size * (( $self->size ** 2 ) - 1))\n";
+    return 1 - ( (6 * $sq_sum) / ( $self->size * (( $self->size ** 2 ) - 1))
+    );
 }
 
 
 sub rank {
     my $u = shift;
 
-    # Make a list of tied ranks for each datum.
-    my %ties;
-    push @{ $ties{ $u->[$_] } }, $_ for 0 .. @$u - 1;
+    # Make a list of ranks for each datum.
+    my %rank;
+    push @{ $rank{ $u->[$_] } }, $_ for 0 .. @$u - 1;
 
     my ($old, $cur) = (0, 0);
 
     # Set the averaged ranks.
     my @ranks;
-    for my $x (sort { $a <=> $b } keys %ties) {
+    for my $x (sort { $a <=> $b } keys %rank) {
         # Get the number of ties.
-        my $ties = @{ $ties{$x} };
+        my $ties = @{ $rank{$x} };
         $cur += $ties;
 
         if ($ties > 1) {
             # Average the tied data.
             my $average = $old + ($ties + 1) / 2;
-            $ranks[$_] = $average for @{ $ties{$x} };
+            $ranks[$_] = $average for @{ $rank{$x} };
         }
         else {
             # Add the single rank to the list of ranks.
-            $ranks[ $ties{$x}[0] ] = $cur;
+            $ranks[ $rank{$x}[0] ] = $cur;
         }
 
         $old = $cur;
     }
 
-    # Remove the non-tied ranks.
-    while( my( $k, $v ) = each %ties ) {
-        delete $ties{$k} unless @$v > 1;
-    }
-
-    # Return the ranks arrayref in a scalar context and include ties
-    # if called in a list context.
-    return wantarray ? (\@ranks, \%ties) : \@ranks;
+    return \@ranks;
 }
 
 sub co_sort {
@@ -225,36 +219,37 @@ sub kendall {
 # Return Kendall's tau correlartion coefficient
     my $self = shift;
 
-    # Calculate number of concordant and discordant pairs.
-    my( $concordant, $discordant ) = ( 0, 0 );
-    for my $i ( 0 .. $self->size - 1 ) {
-        for my $j ( $i + 1 .. $self->size - 1 ) {
-            if( sign( $self->{x_data}[$j] - $self->{x_data}[$i] ) ==
-                sign( $self->{y_data}[$j] - $self->{y_data}[$i] )
-            )    { $concordant++ }
-            else { $discordant++ }
+    # Initialize number of concordant and discordant values.
+    my $concordant = 0;
+    my $discordant = 0;
+
+    # Get a list of the order of the index of the sorted ranks of the
+    # first list.
+    my @list = map $_->[0] + 1,
+        sort { $a->[1] <=> $b->[1] }
+            map [ $_, $self->{x_rank}[$_] ],
+                0 .. $self->size - 1;
+
+    # calculate number of concordant and discordant
+    while (my $index = shift @list) {
+        for (@list) {
+            if( $self->{x_rank}[ $index - 1 ] < $self->{x_rank}[ $_ - 1 ] ) {
+                $concordant++;
+            }
+            elsif( $self->{y_rank}[ $index - 1 ] > $self->{y_rank}[ $_ - 1 ] ) {
+                $discordant++;
+            }
+#            else {
+#                $x_ties++; ?
+#            }
         }
     }
 
-    # Set the indirect relationship.
-    my $d = $self->size * ($self->size - 1) / 2;
-    if( keys %{ $self->x_ties } || keys %{ $self->y_ties } ) {
-        my $x = 0;
-        $x += @$_ * (@$_ - 1) for values %{ $self->x_ties };
-        $x = $d - $x / 2;
-        my $y = 0;
-        $y += @$_ * (@$_ - 1) for values %{ $self->y_ties };
-        $y = $d - $y / 2;
-        $d = sqrt($x * $y);
-    }
-
-    return ($concordant - $discordant) / $d;
-}
-
-sub sign {
-    my $x = shift;
-    return 0 if $x == 0;
-    return $x > 0 ? 1 : -1;
+    return (2 * ($concordant - $discordant)) /
+           ($self->size * ($self->size - 1));
+#    my $N = $self->size * ($self->size - 1);
+#    return (2 * ($concordant - $discordant)) / $N;
+#    return ((4 * ($concordant - $discordant)) / $N) - 1; # wikipedia?
 }
 
 1;
@@ -263,7 +258,7 @@ __END__
 
 =head1 NAME
 
-Statistics::RankCorrelation - Compute the rank correlation between two vectors 
+Statistics::RankCorrelation - Compute vector rank correlations
 
 =head1 SYNOPSIS
 
@@ -274,30 +269,28 @@ Statistics::RankCorrelation - Compute the rank correlation between two vectors
 
   $c = Statistics::RankCorrelation->new( $x, $y, sorted => 1 );
 
-  $n = $c->spearman;
-  $t = $c->kendall;
-  $m = $c->csim;
-
   $s = $c->size;
   $xd = $c->x_data;
   $yd = $c->y_data;
   $xr = $c->x_rank;
   $yr = $c->y_rank;
-  $xt = $c->x_ties;
-  $yt = $c->y_ties;
+
+  $n = $c->spearman;
+  $m = $c->csim;
+  $t = $c->kendall;
 
 =head1 DESCRIPTION
-
-** NOTE:
-** This module does not compute correct results for data with tied ranks.
-** I am working on this... and have new, failing tests to prove it. :)
 
 This module computes rank correlation coefficient measures between two 
 sample vectors.
 
-Examples can be found in the distribution C<eg/> directory and the test
-file.  The C<FUNCTIONS> section below has to use when computing sorted
-rank coefficients by hand.
+* This module is not a hardcore statistics tool.  For serious sample
+space analysis, use a proper package like R L<http://www.r-project.org/>
+Patches welcome. :)
+
+Working examples may be found in the distribution C<eg/> directory and 
+the module test file.  Also the C<FUNCTIONS> section below has some
+handy things to use when computing sorted rank coefficients.
 
 =head1 METHODS
 
@@ -311,9 +304,6 @@ If given two numeric vectors (as array references), the object is
 initialized by computing the statistical ranks of the vectors.  If
 they are of different cardinality the shorter vector is first padded
 with trailing zeros.
-
-If the <C<sorted> flag is set, the bivariate data set is sorted by the
-first (B<x>) vector.
 
 =head2 x_data
 
@@ -329,69 +319,55 @@ Return and set the one dimensional array reference data.  This is the
   $x = $c->y_data;
 
 Return and set the one dimensional array reference data.  This vector
-is dependent on the x vector.
+is dependent on the unit vector.
 
 =head2 size
 
   $c->size( $s );
   $s = $c->size;
 
-Return and set the number of array elements.
+Return and set the number of elements in the unit array.
 
 =head2 x_rank
 
   $c->x_rank( $rx );
   $rx = $c->x_rank;
 
-Return and set the ranks as an array reference.
+Return and set the ranked "unit" data as an array reference.
 
 =head2 y_rank
 
   $ry = $c->y_rank;
   $c->y_rank( $ry );
 
-Return and set the ranks as an array reference.
-
-=head2 x_ties
-
-  $xt = $c->x_ties;
-  $c->x_ties( $xt );
-
-Return and set the ties as a hash reference.
-
-=head2 y_ties
-
-  $yt = $c->y_ties;
-  $c->y_ties( $yt );
-
-Return and set the ties as a hash reference.
+Return (and optionally set) the ranked data as array references.
 
 =head2 spearman
 
   $n = $c->spearman;
+  $n = $c->spearman_rho;
 
 Spearman's rho rank-order correlation is a nonparametric measure of 
 association based on the rank of the data values and is a special 
 case of the Pearson product-moment correlation.
 
-      6 * sum( (xi - yi)^2 )
+The formula is:
+
+      6 * sum( (Xi - Yi)^2 )
   1 - --------------------------
-             n^3 - n
+           n (n^2 - 1)
 
-Where C<x> and C<y> are the two rank vectors and C<i> is an index 
-from one to B<n> number of samples.
+Where C<X> and C<Y> are the two rank vectors and C<i> is an index 
+from one to C<n> number of samples.
 
-=head2 kendall_tau
+=head2 kendall
 
+  $t = $c->kendall;
   $t = $c->kendall_tau;
 
-         c - d
-  t = -------------
-      n (n - 1) / 2
-
-Where B<c> and B<c> are the number of concordant and discordant pairs
-and B<n> is the number of samples.  If there are tied pairs, a
-different (more complicated) denominator is used.
+         4P
+  t = --------- - 1
+      n (n - 1)
 
 =head2 csim
 
@@ -410,14 +386,14 @@ This measure has been studied in musical contour analysis.
 
 =head2 rank
 
-  $v = [qw(1 3.2 2.1 3.2 3.2 4.3)];
-  $ranks = rank($v);
+  $ranks = rank( [ 1.0, 3.2, 2.1, 3.2, 3.2, 4.3 ] );
   # [1, 4, 2, 4, 4, 6]
-  my( $ranks, $ties ) = rank($v);
-  # [1, 4, 2, 4, 4, 6], { 1=>[], 3.2=>[]}
 
-Return an list of an array reference of the ordinal ranks and a hash
-reference of the tied data.
+Return an array reference of the ordinal ranks of the given data.
+
+Note that the data must be sorted as measurement pairs prior to 
+computing the statistical rank.  This is done automatically by the
+object initialization method.
 
 In the case of a tie in the data (identical values) the rank numbers
 are averaged.  An example will elucidate:
@@ -455,6 +431,11 @@ or lower" value within the vector itself.
 
 =head1 TO DO
 
+Figure out what "> 0.5 discrepency" that Vladimir Babenko
+E<lt>Vl_Babenko@softhome.netE<gt> saw in Matlab.
+
+Figure out what the "distancematrix function" is.
+
 Handle any number of vectors instead of just two.
 
 Implement other rank correlation measures that are out there...
@@ -473,8 +454,9 @@ L<http://en.wikipedia.org/wiki/Kendall's_tau>
 
 =head1 THANK YOU
 
-Thomas Breslin E<lt>thomas@thep.lu.seE<gt> and
-Jerome E<lt>jerome.hert@free.frE<gt>.
+Thomas Breslin E<lt>thomas@thep.lu.seE<gt> for unsorted C<rank> code.
+
+Jerome E<lt>jerome.hert@free.frE<gt> for Kendall's tau
 
 =head1 AUTHOR
 

@@ -1,7 +1,9 @@
 CHANGES
+diff.txt
 eg/boolean_grids
 eg/permutations
 lib/Statistics/RankCorrelation.pm
+lib/Statistics/RankCorrelation.pm.new
 lib/Statistics/RankCorrelation.pm.original
 Makefile.PL
 MANIFEST			This list of files
