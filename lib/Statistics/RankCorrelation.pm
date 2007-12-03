@@ -1,7 +1,7 @@
-# $Id: RankCorrelation.pm 797 2007-12-03 07:17:09Z gene $
+# $Id: RankCorrelation.pm 802 2007-12-03 22:16:27Z gene $
 
 package Statistics::RankCorrelation;
-our $VERSION = '0.11_2';
+our $VERSION = '0.11_3';
 use strict;
 use warnings;
 use Carp;

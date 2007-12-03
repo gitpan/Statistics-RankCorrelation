@@ -1,5 +1,8 @@
 Changes file for Statistics::RankCorrelation
 
+0.11_3 Mon Dec 3 2007
+    - Whoops. Needed require 5.006001;
+
 0.11_2 Sun Dec 2 2007
     - Replaced my "restrictive formulation" of spearman() with Jon Schutz' "direct Pearson coefficient of the rank vectors" algorithm - and now spearman (almost) works!
     - Refactored the test a bit.
