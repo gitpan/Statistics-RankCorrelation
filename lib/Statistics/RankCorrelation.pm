@@ -1,7 +1,7 @@
-# $Id: RankCorrelation.pm,v 1.29 2007/03/26 02:19:42 gene Exp $
+# $Id: RankCorrelation.pm 797 2007-12-03 07:17:09Z gene $
 
 package Statistics::RankCorrelation;
-our $VERSION = '0.11_1';
+our $VERSION = '0.11_2';
 use strict;
 use warnings;
 use Carp;
@@ -103,13 +103,22 @@ sub y_ties {
 sub spearman_rho { goto \&spearman }
 sub spearman {
     my $self = shift;
+    # Algorithm contributed by Jon Schutz <Jon.Schutz@youramigo.com>:
+    my($x_sum, $y_sum) = (0, 0);
+    $x_sum += $_ for @{$self->{x_rank}};
+    $y_sum += $_ for @{$self->{y_rank}};
+    my $n = $self->size;
+    my $x_mean = $x_sum / $n;
+    my $y_mean = $y_sum / $n;
     # Compute the sum of the difference of the squared ranks.
-    my $sq_sum = 0;
+    my($x_sum2, $y_sum2, $xy_sum) = (0, 0, 0);
     for( 0 .. $self->size - 1 ) {
-        $sq_sum += ($self->{x_rank}[$_] - $self->{y_rank}[$_]) ** 2;
+        $x_sum2 += ($self->{x_rank}[$_] - $x_mean) ** 2;
+        $y_sum2 += ($self->{y_rank}[$_] - $y_mean) ** 2;
+        $xy_sum += ($self->{x_rank}[$_] - $x_mean) * ($self->{y_rank}[$_] - $y_mean);
     }
-    # Return Spearman's rho.
-    return 1 - (6 * $sq_sum) / ($self->size ** 3 - $self->size);
+    return 1 if $x_sum2 == 0 || $y_sum2 == 0;
+    return $xy_sum / sqrt($x_sum2 * $y_sum2);
 }
 
 
@@ -222,7 +231,7 @@ sub correlation_matrix {
 
 sub kendall_tau { goto \&kendall }
 sub kendall {
-# Return Kendall's tau correlartion coefficient
+# Return Kendall's tau correlation coefficient
     my $self = shift;
 
     # Calculate number of concordant and discordant pairs.
@@ -288,16 +297,17 @@ Statistics::RankCorrelation - Compute the rank correlation between two vectors
 
 =head1 DESCRIPTION
 
-** NOTE:
-** This module does not compute correct results for data with tied ranks.
-** I am working on this... and have new, failing tests to prove it. :)
-
 This module computes rank correlation coefficient measures between two 
 sample vectors.
 
 Examples can be found in the distribution C<eg/> directory and the test
 file.  The C<FUNCTIONS> section below has to use when computing sorted
 rank coefficients by hand.
+
+=head2 * IMPORTANT NOTE *
+
+This module does not compute correct results for Kendall's Tau with
+tied ranks.  I am working on this and have failing tests to prove it.
 
 =head1 METHODS
 
@@ -473,8 +483,9 @@ L<http://en.wikipedia.org/wiki/Kendall's_tau>
 
 =head1 THANK YOU
 
-Thomas Breslin E<lt>thomas@thep.lu.seE<gt> and
-Jerome E<lt>jerome.hert@free.frE<gt>.
+Thomas Breslin E<lt>thomas@thep.lu.seE<gt>,
+Jerome E<lt>jerome.hert@free.frE<gt> and
+Jon Schutz E<lt>Jon.Schutz@youramigo.comE<gt>
 
 =head1 AUTHOR
 
@@ -482,7 +493,7 @@ Gene Boggs E<lt>gene@cpan.orgE<gt>
 
 =head1 COPYRIGHT
 
-Copyright 2003, Gene Boggs
+Copyright 2003-2007, Gene Boggs
 
 =head1 LICENSE
 

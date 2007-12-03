@@ -1,5 +1,13 @@
 Changes file for Statistics::RankCorrelation
 
+0.11_2 Sun Dec 2 2007
+    - Replaced my "restrictive formulation" of spearman() with Jon Schutz' "direct Pearson coefficient of the rank vectors" algorithm - and now spearman (almost) works!
+    - Refactored the test a bit.
+
+0.11_1 26 Mar 2007
+    - Realized that the module does not compute correct results in the presence of tied ranks and updated POD accordingly.
+    - Added a slew of TODO tests for tied ranks.
+
 0.10  Sat Mar 24 2007
     - Added Kendall's tau.
     - Added data sorting.
