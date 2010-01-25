@@ -1,7 +1,7 @@
 # $Id: RankCorrelation.pm 802 2007-12-03 22:16:27Z gene $
 
 package Statistics::RankCorrelation;
-our $VERSION = '0.12';
+our $VERSION = '0.1201';
 use strict;
 use warnings;
 use Carp;
@@ -295,13 +295,7 @@ This module computes rank correlation coefficient measures between two
 sample vectors.
 
 Examples can be found in the distribution C<eg/> directory and the test
-file.  The C<FUNCTIONS> section below has to use when computing sorted
-rank coefficients by hand.
-
-=head2 * IMPORTANT NOTE *
-
-This module does not compute correct results for Kendall's Tau with
-tied ranks.  I am working on this and have failing tests to prove it.
+file.
 
 =head1 METHODS
 

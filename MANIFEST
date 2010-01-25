@@ -7,6 +7,7 @@ lib/Statistics/RankCorrelation.pm
 Makefile.PL
 MANIFEST			This list of files
 README
+Statistics-RankCorrelation-0.12.tar.gz
 t/00-load.t
 t/01-methods.t
 t/boilerplate.t

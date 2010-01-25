@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               Statistics-RankCorrelation
-version:            0.12
+version:            0.1201
 abstract:           Compute the rank correlation between two vectors 
 author:
     - Gene Boggs <gene@cpan.org>
