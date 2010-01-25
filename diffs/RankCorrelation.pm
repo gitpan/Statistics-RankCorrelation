@@ -1,7 +1,7 @@
 # $Id: RankCorrelation.pm 802 2007-12-03 22:16:27Z gene $
 
 package Statistics::RankCorrelation;
-our $VERSION = '0.12';
+our $VERSION = '0.11_3';
 use strict;
 use warnings;
 use Carp;
@@ -100,6 +100,7 @@ sub y_ties {
     return $self->{y_ties};
 }
 
+sub spearman_rho { goto \&spearman }
 sub spearman {
     my $self = shift;
     # Algorithm contributed by Jon Schutz <Jon.Schutz@youramigo.com>:
@@ -197,7 +198,9 @@ sub csim {
     return $k / (@$m1 * @$m1);
 }
 
-sub pad_vectors { # Append zeros to either vector for all values in the other that do not have a corresponding value.
+sub pad_vectors {
+# Append zeros to either vector for all values in the other that do
+# not have a corresponding value.
     my ($u, $v) = @_;
 
     if (@$u > @$v) {
@@ -210,7 +213,9 @@ sub pad_vectors { # Append zeros to either vector for all values in the other th
     return $u, $v;
 }
 
-sub correlation_matrix { # Build a square, binary matrix that represents "higher or lower" value within the given vector.
+sub correlation_matrix {
+# Build a square, binary matrix that represents "higher or lower"
+# value within the given vector.
     my $u = shift;
     my $c;
 
@@ -224,7 +229,9 @@ sub correlation_matrix { # Build a square, binary matrix that represents "higher
     return $c;
 }
 
-sub kendall { # Return Kendall's tau correlation coefficient
+sub kendall_tau { goto \&kendall }
+sub kendall {
+# Return Kendall's tau correlation coefficient
     my $self = shift;
 
     # Calculate number of concordant and discordant pairs.
@@ -233,7 +240,7 @@ sub kendall { # Return Kendall's tau correlation coefficient
         for my $j ( $i + 1 .. $self->size - 1 ) {
             my $x_sign = sign( $self->{x_data}[$j] - $self->{x_data}[$i] );
             my $y_sign = sign( $self->{y_data}[$j] - $self->{y_data}[$i] );
-            if (not($x_sign and $y_sign)) {}
+            if (! $x_sign || ! $y_sign) {}
             elsif ($x_sign == $y_sign) { $concordant++ }
             else { $discordant++ }
         }
@@ -385,9 +392,9 @@ case of the Pearson product-moment correlation.
 Where C<x> and C<y> are the two rank vectors and C<i> is an index 
 from one to B<n> number of samples.
 
-=head2 kendall
+=head2 kendall_tau
 
-  $t = $c->kendall;
+  $t = $c->kendall_tau;
 
          c - d
   t = -------------
@@ -457,10 +464,6 @@ Return the correlation matrix for a single vector.
 This function builds a square, binary matrix that represents "higher 
 or lower" value within the vector itself.
 
-=head2 sign
-
-Return 0, 1 or -1 given a number.
-
 =head1 TO DO
 
 Handle any number of vectors instead of just two.
@@ -473,7 +476,7 @@ For the C<csim> method:
 
 L<http://www2.mdanderson.org/app/ilya/Publications/JNMRcontour.pdf>
 
-For the C<spearman> and C<kendall> methods:
+For the C<spearman> and C<kendall_tau> methods:
 
 L<http://mathworld.wolfram.com/SpearmanRankCorrelationCoefficient.html>
 
@@ -482,19 +485,20 @@ L<http://en.wikipedia.org/wiki/Kendall's_tau>
 =head1 THANK YOU
 
 Thomas Breslin E<lt>thomas@thep.lu.seE<gt>,
-Jerome E<lt>jerome.hert@free.frE<gt>,
-Jon Schutz E<lt>Jon.Schutz@youramigo.comE<gt> and
-Andy Lee E<lt>yikes2000@yahoo.comE<gt>
+Jerome E<lt>jerome.hert@free.frE<gt> and
+Jon Schutz E<lt>Jon.Schutz@youramigo.comE<gt>
 
-=head1 AUTHOR AND COPYRIGHT
+=head1 AUTHOR
 
 Gene Boggs E<lt>gene@cpan.orgE<gt>
 
-Copyright 2009, Gene Boggs, All Rights Reserved.
+=head1 COPYRIGHT
+
+Copyright 2003-2007, Gene Boggs
 
 =head1 LICENSE
 
-This program is free software; you can redistribute or modify it under
-the same terms as Perl itself.
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself. 
 
 =cut

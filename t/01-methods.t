@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 use Test::More tests => 77;
-use_ok 'Statistics::RankCorrelation';
+BEGIN { use_ok 'Statistics::RankCorrelation' }
 
 my @x = qw( 0 0 0 0 );
 my @y = @x;
@@ -67,11 +67,10 @@ ok $t == sprintf( '%.3f', $c->kendall ), 'kendall tau';
 $c = Statistics::RankCorrelation->new( \@x, \@y );
 ok !keys(%{$c->x_ties}), 'x not tied';
 ok scalar(keys(%{$c->y_ties})), 'y ties';
-( $r, $t ) = ( 0.941, 0.745 );
+#( $r, $t ) = ( 0.941, 0.745 );
+( $r, $t ) = ( 0.941, 0.894 );
 ok $r == sprintf( '%.3f', $c->spearman ), 'spearman rho';
-TODO: { local $TODO = 'tied ranks';
 ok $t == sprintf( '%.3f', $c->kendall ), 'kendall tau';
-}
 
 # http://fonsg3.let.uva.nl/Service/Statistics/RankCorrelation_coefficient.html
 @x = qw( 579 509 527 516 592 503 511 517 538 );
@@ -91,9 +90,7 @@ ok !keys(%{$c->x_ties}), 'x not tied';
 ok scalar(keys(%{$c->y_ties})), 'y ties';
 ( $r, $t ) = ( 0.649, 0.498 );
 ok $r == sprintf( '%.3f', $c->spearman ), 'spearman rho';
-TODO: { local $TODO = 'tied ranks';
 ok $t == sprintf( '%.3f', $c->kendall ), 'kendall tau';
-}
 
 # http://en.wikipedia.org/wiki/Spearman%27s_rank_correlation_coefficient
 @x = qw( 106 86 100 100 99 103 97 113 113 110 );
@@ -111,9 +108,7 @@ ok scalar(keys(%{$c->x_ties})), 'x ties';
 ok scalar(keys(%{$c->y_ties})), 'y ties';
 ( $r, $t ) = ( -0.214, -0.167 );
 ok $r == sprintf( '%.3f', $c->spearman ), 'spearman rho';
-TODO: { local $TODO = 'tied ranks';
 ok $t == sprintf( '%.3f', $c->kendall ), 'kendall tau';
-}
 
 # http://en.wikipedia.org/wiki/Kendall's_tau
 @x = qw( 1 2 3 4 5 6 7 8 );
@@ -147,22 +142,17 @@ ok !keys(%{$c->x_ties}), 'x not tied';
 ok scalar(keys(%{$c->y_ties})), 'y ties';
 ( $r, $t ) = ( -0.632, -0.548 );
 ok $r == sprintf( '%.3f', $c->spearman ), 'spearman rho';
-TODO: { local $TODO = 'tied ranks';
 ok $t == sprintf( '%.3f', $c->kendall ), 'kendall tau';
-}
 
 # http://www.biostat.wustl.edu/archives/html/s-news/2002-01/msg00065.html
-@y = qw( 0  0  0  0 20 20  0 60  0 20 10 10  0 40  0 20  0  0  0  0 );
+@x = qw( 0  0  0  0 20 20  0 60  0 20 10 10  0 40  0 20  0  0  0  0 );
 @y = qw( 0 80 80 80 10 33 60  0 67 27 25 80 80 80 80 80 80  0 10 45 );
 $c = Statistics::RankCorrelation->new( \@x, \@y );
 ok scalar(keys(%{$c->x_ties})), 'x ties';
 ok scalar(keys(%{$c->y_ties})), 'y ties';
 ( $r, $t ) = ( -0.186, -0.159 );
-TODO: { local $TODO = 'tied ranks';
-# XXX This test fails for pearson(). Wtf? *cry*
 ok $r == sprintf( '%.3f', $c->spearman ), 'spearman rho';
 ok $t == sprintf( '%.3f', $c->kendall ), 'kendall tau';
-}
 
 # R
 @x = qw( 44.4 45.9 41.9 53.3 44.7 44.1 50.7 45.2 60.1 );

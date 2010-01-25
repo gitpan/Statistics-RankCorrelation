@@ -1,5 +1,10 @@
 Changes file for Statistics::RankCorrelation
 
+0.12 Mon, Jan 25, 2009
+    - Andy Lee submite a patch that solved my tied ranks dilemma. Yay!
+    - Added proper renamed tests with pod and boileplate.
+    - Updated POD and README.
+
 0.11_3 Mon Dec 3 2007
     - Whoops. Needed require 5.006001;
 
