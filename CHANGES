@@ -1,5 +1,8 @@
 Changes file for Statistics::RankCorrelation
 
+0.1202 2010.08.16 Something is not right with my previous commit. :(
+0.1201 ?
+
 0.12 Mon, Jan 25, 2009
     - Andy Lee submite a patch that solved my tied ranks dilemma. Yay!
     - Added proper renamed tests with pod and boileplate.

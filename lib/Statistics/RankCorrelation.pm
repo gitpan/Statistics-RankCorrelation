@@ -1,7 +1,7 @@
 # $Id: RankCorrelation.pm 802 2007-12-03 22:16:27Z gene $
 
 package Statistics::RankCorrelation;
-our $VERSION = '0.1201';
+our $VERSION = '0.1202';
 use strict;
 use warnings;
 use Carp;
