@@ -14,10 +14,8 @@ my $Y = List::Permutor->new( map { sprintf '%0.3f', rand } 0 .. $n );
 my $i = 0;
 
 # Loop over each combination of the sets together.
-while( my @x = $X->next )
-    {
-    while( my @y = $Y->next )
-        {
+while( my @x = $X->next ) {
+    while( my @y = $Y->next ) {
         my $c = Statistics::RankCorrelation->new( \@x, \@y );
 
         # Show the count, vector data, spearman and csim correlations.

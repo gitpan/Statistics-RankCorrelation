@@ -1,7 +1,7 @@
 # $Id: RankCorrelation.pm 802 2007-12-03 22:16:27Z gene $
 
 package Statistics::RankCorrelation;
-our $VERSION = '0.1202';
+our $VERSION = '0.1203';
 use strict;
 use warnings;
 use Carp;
@@ -294,31 +294,32 @@ Statistics::RankCorrelation - Compute the rank correlation between two vectors
 This module computes rank correlation coefficient measures between two 
 sample vectors.
 
-Examples can be found in the distribution C<eg/> directory and the test
-file.
+Examples can be found in the distribution C<eg/> directory and methods
+test.
 
 =head1 METHODS
 
 =head2 new
 
+  $c = Statistics::RankCorrelation->new;
   $c = Statistics::RankCorrelation->new( \@u, \@v );
+  $c = Statistics::RankCorrelation->new( \@u, \@v, sorted => 1 );
 
 This method constructs a new C<Statistics::RankCorrelation> object.
 
-If given two numeric vectors (as array references), the object is
-initialized by computing the statistical ranks of the vectors.  If
-they are of different cardinality the shorter vector is first padded
-with trailing zeros.
+If given two numeric vectors (as array references), the statistical 
+ranks are computed.  If the vectors are of different size, the shorter
+is padded with zeros.
 
-If the <C<sorted> flag is set, the bivariate data set is sorted by the
-first (B<x>) vector.
+If the C<sorted> flag is set, both are sorted by the first (B<x>)
+vector.
 
 =head2 x_data
 
   $c->x_data( $y );
   $x = $c->x_data;
 
-Return and set the one dimensional array reference data.  This is the
+Set or return the one dimensional array reference data.  This is the
 "unit" array, used as a reference for size and iteration.
 
 =head2 y_data
@@ -326,7 +327,7 @@ Return and set the one dimensional array reference data.  This is the
   $c->y_data( $y );
   $x = $c->y_data;
 
-Return and set the one dimensional array reference data.  This vector
+Set or return the one dimensional array reference data.  This vector
 is dependent on the x vector.
 
 =head2 size
@@ -334,49 +335,51 @@ is dependent on the x vector.
   $c->size( $s );
   $s = $c->size;
 
-Return and set the number of array elements.
+Set or return the number of array elements.
 
 =head2 x_rank
 
-  $c->x_rank( $rx );
-  $rx = $c->x_rank;
+  $c->x_rank( $r );
+  $r = $c->x_rank;
 
-Return and set the ranks as an array reference.
+Set or return the ranks as an array reference.
 
 =head2 y_rank
 
-  $ry = $c->y_rank;
-  $c->y_rank( $ry );
+  $c->y_rank( $y );
+  $y = $c->y_rank;
 
-Return and set the ranks as an array reference.
+Set or return the ranks as an array reference.
 
 =head2 x_ties
 
-  $xt = $c->x_ties;
-  $c->x_ties( $xt );
+  $c->x_ties( $t );
+  $t = $c->x_ties;
 
-Return and set the ties as a hash reference.
+Set or return the ties as a hash reference.
 
 =head2 y_ties
 
-  $yt = $c->y_ties;
-  $c->y_ties( $yt );
+  $c->y_ties( $t );
+  $t = $c->y_ties;
 
-Return and set the ties as a hash reference.
+Set or return the ties as a hash reference.
 
 =head2 spearman
 
   $n = $c->spearman;
 
-Spearman's rho rank-order correlation is a nonparametric measure of 
-association based on the rank of the data values and is a special 
-case of the Pearson product-moment correlation.
-
       6 * sum( (xi - yi)^2 )
   1 - --------------------------
              n^3 - n
 
-Where C<x> and C<y> are the two rank vectors and C<i> is an index 
+Return Spearman's rho.
+
+Spearman's rho rank-order correlation is a nonparametric measure of 
+association based on the rank of the data values and is a special 
+case of the Pearson product-moment correlation.
+
+Here C<x> and C<y> are the two rank vectors and C<i> is an index 
 from one to B<n> number of samples.
 
 =head2 kendall
@@ -387,9 +390,10 @@ from one to B<n> number of samples.
   t = -------------
       n (n - 1) / 2
 
-Where B<c> and B<c> are the number of concordant and discordant pairs
-and B<n> is the number of samples.  If there are tied pairs, a
-different (more complicated) denominator is used.
+Return Kendall's tau.
+
+Here, B<c> and B<d>, are the number of concordant and discordant
+pairs and B<n> is the number of samples.
 
 =head2 csim
 
@@ -465,7 +469,7 @@ Implement other rank correlation measures that are out there...
 
 For the C<csim> method:
 
-L<http://www2.mdanderson.org/app/ilya/Publications/JNMRcontour.pdf>
+L<http://personal.systemsbiology.net/ilya/Publications/JNMRcontour.pdf>
 
 For the C<spearman> and C<kendall> methods:
 
@@ -475,16 +479,21 @@ L<http://en.wikipedia.org/wiki/Kendall's_tau>
 
 =head1 THANK YOU
 
-Thomas Breslin E<lt>thomas@thep.lu.seE<gt>,
-Jerome E<lt>jerome.hert@free.frE<gt>,
-Jon Schutz E<lt>Jon.Schutz@youramigo.comE<gt> and
+For helping make this sturdier code:
+
+Thomas Breslin E<lt>thomas@thep.lu.seE<gt>
+
+Jerome E<lt>jerome.hert@free.frE<gt>
+
+Jon Schutz E<lt>Jon.Schutz@youramigo.comE<gt>
+
 Andy Lee E<lt>yikes2000@yahoo.comE<gt>
 
 =head1 AUTHOR AND COPYRIGHT
 
 Gene Boggs E<lt>gene@cpan.orgE<gt>
 
-Copyright 2009, Gene Boggs, All Rights Reserved.
+Copyright 2010, Gene Boggs, All Rights Reserved.
 
 =head1 LICENSE
 
